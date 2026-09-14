@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article class="book-detail">
+    <div class="book-header">
+        <h1>{{ book.title }}</h1>
+        <p class="authors">
+            {% for author in book.authors_rel %}
+                <a href="/author/{{ author.id }}" class="author-link">{{ author.display_name }}</a>{% if not loop.last %}; {% endif %}
+            {% endfor %}
+        </p>
+        {% if book.series %}
+            <p class="series">
+                <a href="/search?field=series&q={{ book.series|urlencode }}" class="series-link">
+                    {{ book.series }}{% if book.series_num %} #{{ book.series_num }}{% endif %}
+                </a>
+            </p>
+        {% endif %}
+    </div>
+    <div class="author-actions">
+        {% for author in book.authors|split_authors %}
+            <a href="{{ author.url }}" class="chip">📚 Все книги {{ author.display }}</a>
+        {% endfor %}
+    </div>
+    <dl class="book-meta">
+        <dt>LibID</dt><dd>{{ book.lib_id }}</dd>
+        <dt>Язык</dt><dd>{{ book.language or '—' }}</dd>
+        <dt>Размер</dt><dd>{{ book.file_size|format_size }}</dd>
+        <dt>Дата добавления</dt><dd>{{ book.date_added or '—' }}</dd>
+        <dt>Архив</dt><dd><code>{{ book.archive_name }}</code></dd>
+        {% if book.is_deleted %}
+        <dt>Статус</dt><dd class="deleted">удалена из каталога</dd>
+        {% endif %}
+    </dl>
+
+    {% if book.annotation %}
+    <section class="annotation">
+        <h2>Аннотация</h2>
+        <p>{{ book.annotation|strip_tags }}</p>
+    </section>
+    {% endif %}
+
+    <div class="actions">
+        <a class="btn-primary" href="/book/{{ book.lib_id }}/download">⬇ Скачать FB2</a>
+        <button class="add-to-cart-btn" data-lib-id="{{ book.lib_id }}" title="В корзину">+</button>
+        <a class="btn-secondary" href="/random">🎲 Случайная книга</a>
+    </div>
+</article>
+{% endblock %}

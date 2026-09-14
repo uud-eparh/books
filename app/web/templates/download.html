@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="download-page">
+    <h1>Скачивание книги</h1>
+    <p class="book-title">{{ book.title }}</p>
+    <p class="authors">
+        {% for author in book.authors_rel %}
+            <a href="/author/{{ author.id }}">{{ author.display_name }}</a>{% if not loop.last %} · {% endif %}
+        {% endfor %}
+    </p>
+
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+        <p class="progress-status" id="progress-status">Подготовка…</p>
+        <p class="progress-details" id="progress-details"></p>
+    </div>
+
+    <div class="actions">
+        <a class="btn-secondary" href="/book/{{ book.lib_id }}">← Вернуться к книге</a>
+    </div>
+</div>
+
+<script>
+    window.LIB_ID = {{ lib_id }};
+</script>
+<script src="/static/download.js"></script>
+{% endblock %}

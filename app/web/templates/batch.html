@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="batch-page">
+    <h1>Пакетное скачивание</h1>
+
+    <div class="batch-summary">
+        <p>
+            Книг в пакете: <strong id="total-count">{{ job.total_books }}</strong>
+            · Готово: <strong id="done-count">0</strong>
+        </p>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+    </div>
+    <p class="progress-status" id="progress-status">Подготовка…</p>
+    <p class="progress-details" id="progress-details"></p>
+
+    <ul class="batch-list" id="batch-list">
+        {# Заполняется через JS по мере поступления событий #}
+    </ul>
+
+    <div class="actions">
+        <button id="cancel-btn" class="btn-secondary">Отменить</button>
+        <a href="/" class="btn-secondary">← На главную</a>
+    </div>
+
+    <div id="success-block" style="display: none;">
+        <p class="success-msg">✅ ZIP-архив готов!</p>
+        <p id="failed-info" class="failed-info"></p>
+        <a id="download-link" class="btn-primary" href="#">⬇ Скачать ZIP</a>
+    </div>
+</div>
+
+<script>
+    window.BATCH_JOB_ID = "{{ job.id }}";
+    window.BATCH_LIB_IDS = {{ job.lib_ids|tojson }};
+    window.BATCH_TOTAL = {{ job.total_books }};
+</script>
+<script src="/static/batch.js"></script>
+{% endblock %}

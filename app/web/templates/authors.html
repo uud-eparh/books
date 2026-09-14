@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="authors-index">
+    <h1>Авторы</h1>
+    <form class="author-search" action="/authors" method="get">
+        <input type="text" name="q" value="{{ q }}" placeholder="Имя автора…">
+        <button type="submit">Найти</button>
+    </form>
+
+    {% if result.items %}
+    <ul class="author-list">
+        {% for author in result.items %}
+        <li class="author-item">
+            <a href="/author/{{ author.id }}">{{ author.display_name }}</a>
+            <span class="count">{{ author.books_count }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+        <p class="no-results">Авторы не найдены.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<article class="author-detail">
+    <h1>{{ author.display_name }}</h1>
+    <p class="meta">Всего книг: <strong>{{ author.books_count }}</strong></p>
+
+    {% if result.items %}
+    <ul class="book-list">
+        {% for book in result.items %}
+        <li class="book-item">
+            <div class="book-item-main">
+                <h3><a href="/book/{{ book.lib_id }}">{{ book.title }}</a></h3>
+                {% if book.series %}
+                    <p class="series">
+                        <a href="/series/{{ book.series_id }}">{{ book.series }}{% if book.series_num %} #{{ book.series_num }}{% endif %}</a>
+                    </p>
+                {% endif %}
+            </div>
+            <div class="book-item-meta">
+                <span class="lang">{{ book.language or '—' }}</span>
+                <span class="size">{{ book.file_size|format_size }}</span>
+                <a class="download" href="/book/{{ book.lib_id }}/download">⬇</a>
+                <button class="add-to-cart-btn" data-lib-id="{{ book.lib_id }}" title="В корзину">+</button>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <nav class="pagination">
+        {% if result.has_prev %}
+            <a href="/author/{{ author.id }}?page={{ result.page - 1 }}">← Назад</a>
+        {% else %}
+            <span class="disabled">← Назад</span>
+        {% endif %}
+        <span class="page-info">{{ result.page }} / {{ result.total_pages }}</span>
+        {% if result.has_next %}
+            <a href="/author/{{ author.id }}?page={{ result.page + 1 }}">Вперёд →</a>
+        {% else %}
+            <span class="disabled">Вперёд →</span>
+        {% endif %}
+    </nav>
+    {% else %}
+        <p class="no-results">У автора пока нет книг.</p>
+    {% endif %}
+</article>
+{% endblock %}

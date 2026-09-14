@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h1>Локальная библиотека FB2</h1>
+    <p class="subtitle">Введите автора или название книги в поле выше.</p>
+</section>
+
+{% if random_book %}
+<section class="random-block">
+    <h2>🎲 Случайная книга</h2>
+    <div class="book-card">
+        <h3><a href="/book/{{ random_book.lib_id }}">{{ random_book.title }}</a></h3>
+        <button class="add-to-cart-btn" data-lib-id="{{ random_book.lib_id }}" title="В корзину">+</button>
+        <p class="authors">
+            {% if random_book.authors_rel %}
+                {% for author in random_book.authors_rel %}
+                    <a href="/author/{{ author.id }}" class="author-link">{{ author.display_name }}</a>{% if not loop.last %} · {% endif %}
+                {% endfor %}
+            {% else %}
+                {{ random_book.authors|normalize_authors }}
+            {% endif %}
+        </p>
+        {% if random_book.series %}
+            <p class="series">
+                <a href="/search?field=series&q={{ random_book.series|urlencode }}" class="series-link">
+                    {{ random_book.series }}{% if random_book.series_num %} #{{ random_book.series_num }}{% endif %}
+                </a>
+            </p>
+        {% endif %}
+        {% if random_book.annotation %}
+            <p class="annotation">{{ random_book.annotation|strip_tags|truncate_text(250) }}</p>
+        {% endif %}
+        <p class="meta">
+            {{ random_book.language or '—' }} · {{ random_book.file_size|format_size }}
+        </p>
+    </div>
+    
+</section>
+<div class="cart-panel" id="cart-panel" style="display:none">
+    <span id="cart-count">0</span> книг
+    <button id="cart-download">Скачать ZIP</button>
+    <button id="cart-clear">Очистить</button>
+</div>
+{% endif %}
+{% endblock %}

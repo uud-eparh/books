@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="search-results">
+    <h1>
+        {% if q %}
+            Результаты поиска: <em>{{ q }}</em>
+            {% if result.field.value != 'all' %}
+                <small class="field-badge">{{ {
+                    'title': 'по названию',
+                    'author': 'по автору',
+                    'series': 'по серии'
+                }[result.field.value] }}</small>
+            {% endif %}
+        {% else %}
+            Все книги
+        {% endif %}
+    </h1>
+    <p class="total">Найдено: <strong>{{ result.total }}</strong>
+        {% if result.total_pages > 1 %}
+            · страница {{ result.page }} из {{ result.total_pages }}
+        {% endif %}
+    </p>
+
+    {% if result.items %}
+    <ul class="book-list">
+        {% for book in result.items %}
+        <li class="book-item">
+            <div class="book-item-main">
+                <h3><a href="/book/{{ book.lib_id }}">{{ book.title }}</a></h3>
+                <p class="authors">
+                    {% for author in book.authors_rel %}
+                        <a href="/author/{{ author.id }}" class="author-link">{{ author.display_name }}</a>{% if not loop.last %}; {% endif %}
+                    {% endfor %}
+                </p>
+                {% if book.series %}
+                    <p class="series">
+                        <a href="/search?field=series&q={{ book.series|urlencode }}" class="series-link">
+                            {{ book.series }}{% if book.series_num %} #{{ book.series_num }}{% endif %}
+                        </a>
+                    </p>
+                {% endif %}
+            </div>
+            <div class="book-item-meta">
+                <span class="lang">{{ book.language or '—' }}</span>
+                <span class="size">{{ book.file_size|format_size }}</span>
+                <a class="download" href="/book/{{ book.lib_id }}/download">⬇</a>
+                                <button class="add-to-cart-btn" data-lib-id="{{ book.lib_id }}" title="В корзину">+</button>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <nav class="pagination">
+        {% if result.has_prev %}
+            <a href="/search?q={{ q|urlencode }}&field={{ result.field.value }}&page={{ result.page - 1 }}&page_size={{ result.page_size }}">← Назад</a>
+        {% else %}
+            <span class="disabled">← Назад</span>
+        {% endif %}
+
+        <span class="page-info">
+            {{ result.page }} / {{ result.total_pages }}
+        </span>
+
+        {% if result.has_next %}
+            <a href="/search?q={{ q|urlencode }}&field={{ result.field.value }}&page={{ result.page + 1 }}&page_size={{ result.page_size }}">Вперёд →</a>
+        {% else %}
+            <span class="disabled">Вперёд →</span>
+        {% endif %}
+    </nav>
+    {% else %}
+        <p class="no-results">Ничего не найдено.</p>
+    {% endif %}
+</div>
+{% endblock %}
