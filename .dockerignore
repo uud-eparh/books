@@ -7,6 +7,7 @@
 .env
 .env.docker
 .env.example
+.env.local
 
 # --- Python ---
 .venv/
@@ -39,9 +40,6 @@ flibusta_fb2_local.inpx
 books.pdf
 test_torrent.fb2
 
-# --- Документация ---
-*.md
-README.md
 
 # --- Тесты ---
 tests/

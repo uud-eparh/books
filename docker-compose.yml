@@ -16,14 +16,13 @@ services:
       retries: 5
 
   tor:
-    image: alpine:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.tor
     container_name: flibusta_tor
     restart: unless-stopped
     volumes:
       - ./docker/torrc:/etc/tor/torrc:ro
-    command: >
-      sh -c "apk add --no-cache tor obfs4proxy &&
-             tor -f /etc/tor/torrc"
 
   app:
     build:
@@ -37,8 +36,8 @@ services:
       tor:
         condition: service_started
     environment:
-      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-flibusta}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flibusta_secret}
       POSTGRES_DB: ${POSTGRES_DB:-flibusta}
@@ -55,7 +54,7 @@ services:
 
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS:-}
-      TELEGRAM_PROXY: ${TELEGRAM_PROXY:-socks5://tor:9050}
+      TELEGRAM_PROXY: socks5://tor:9050
     ports:
       - "8000:8000"
     volumes:

@@ -28,7 +28,9 @@ def create_bot_and_dispatcher() -> tuple[Bot, Dispatcher]:
         raise RuntimeError("TELEGRAM_BOT_TOKEN не задан в .env")
 
     # SOCKS5 от Tor
-    session = AiohttpSession(proxy="socks5://127.0.0.1:9050")
+    proxy_url = settings.telegram_proxy
+    logger.info("Using proxy: %s", proxy_url)
+    session = AiohttpSession(proxy=proxy_url)
 
     bot = Bot(
         token=settings.telegram_bot_token,
@@ -53,8 +55,18 @@ def create_bot_and_dispatcher() -> tuple[Bot, Dispatcher]:
 async def start_polling_async(bot: Bot, dp: Dispatcher) -> None:
     """Запустить polling (блокирующий до остановки)."""
     logger.info("Starting Telegram bot polling…")
-    # Убираем webhook, если был установлен
-    await bot.delete_webhook(drop_pending_updates=True)
-    me = await bot.get_me()
-    logger.info("Bot started: @%s (id=%s)", me.username, me.id)
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+        logger.info("Webhook deleted")
+    except Exception as exc:
+        logger.warning("delete_webhook failed: %r", exc)
+
+    try:
+        me = await bot.get_me()
+        logger.info("Bot started: @%s (id=%s)", me.username, me.id)
+    except Exception as exc:
+        logger.exception("get_me failed")
+        raise
+
+    logger.info("Starting long polling…")
     await dp.start_polling(bot)

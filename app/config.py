@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # Telegram
     telegram_bot_token: str = ""
     telegram_allowed_users: str = ""
+    telegram_proxy: str = "socks5://127.0.0.1:9050"
 
     # Paths
     inpx_path: Path = Path("/data/flibusta_fb2_local.inpx")

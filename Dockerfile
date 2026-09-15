@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Создаём виртуальное окружение (чтобы использовать системный libtorrent)
-RUN python3.12 -m venv /opt/venv
+RUN python3.12 -m venv --system-site-packages /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Копируем зависимости

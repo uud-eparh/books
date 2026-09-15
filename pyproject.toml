@@ -11,6 +11,7 @@ dependencies = [
     "python-multipart>=0.0.12",
     # Bot
     "aiogram>=3.13",
+    "aiohttp-socks>=0.10",
     # DB
     "sqlalchemy[asyncio]>=2.0",
     "asyncpg>=0.30",
@@ -28,6 +29,7 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
     "ruff>=0.6",
 ]
 
@@ -45,3 +47,8 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
 ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
