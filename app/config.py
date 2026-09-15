@@ -39,9 +39,6 @@ class Settings(BaseSettings):
     torrent_hash: str = ""
     torrent_magnet: str = ""
 
-    # Temp files
-    temp_file_ttl_minutes: int = 10
-
     @field_validator("temp_download_path", mode="after")
     @classmethod
     def ensure_temp_dir(cls, v: Path) -> Path:

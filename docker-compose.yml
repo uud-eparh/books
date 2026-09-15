@@ -4,31 +4,84 @@ services:
     container_name: flibusta_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-flibusta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flibusta_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-flibusta}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-flibusta}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: flibusta_pgadmin
+  tor:
+    image: alpine:latest
+    container_name: flibusta_tor
     restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
+    volumes:
+      - ./docker/torrc:/etc/tor/torrc:ro
+    command: >
+      sh -c "apk add --no-cache tor obfs4proxy &&
+             tor -f /etc/tor/torrc"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flibusta_app
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
+      tor:
+        condition: service_started
+    environment:
+      # PostgreSQL (внутреннее имя сервиса)
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-flibusta}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flibusta_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-flibusta}
+
+      # Telegram
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS}
+      TELEGRAM_PROXY: socks5://tor:9050
+
+      # Пути (внутри контейнера)
+      INPX_PATH: /data/inpx/flibusta_fb2_local.inpx
+      TORRENT_DATA_PATH: /data/library
+      TEMP_DOWNLOAD_PATH: /app/tmp_downloads
+      TEMP_DOWNLOAD_MAX_GB: ${TEMP_DOWNLOAD_MAX_GB:-20}
+      TEMP_FILE_TTL_MINUTES: ${TEMP_FILE_TTL_MINUTES:-10}
+
+      # Приложение
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      APP_DEBUG: ${APP_DEBUG:-false}
+
+      # Torrents (два торрента)
+      TORRENT_1_HASH: ${TORRENT_1_HASH}
+      TORRENT_1_MAGNET: ${TORRENT_1_MAGNET}
+      TORRENT_1_SAVE_PATH: /data/library
+      TORRENT_1_INPX: /data/inpx/flibusta_fb2_local.inpx
+    ports:
+      - "8000:8000"
+    volumes:
+      # Библиотека (read-only)
+      - ${LIBRARY_PATH}:/data/library:ro
+      # INPX-каталоги
+      - ${INPX_DIR}:/data/inpx:ro
+      # Временные загрузки
+      - ./tmp_downloads:/app/tmp_downloads
+      # Логи
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data:
