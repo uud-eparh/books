@@ -29,9 +29,9 @@ class Settings(BaseSettings):
     telegram_allowed_users: str = ""
 
     # Paths
-    inpx_path: Path
-    torrent_data_path: Path
-    temp_download_path: Path = Path("./tmp_downloads")
+    inpx_path: Path = Path("/data/flibusta_fb2_local.inpx")
+    torrent_data_path: Path = Path("/data")
+    temp_download_path: Path = Path("/app/tmp_downloads")
     temp_download_max_gb: int = 20
     temp_file_ttl_minutes: int = 10
 

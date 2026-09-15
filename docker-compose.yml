@@ -37,45 +37,30 @@ services:
       tor:
         condition: service_started
     environment:
-      # PostgreSQL (внутреннее имя сервиса)
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER:-flibusta}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flibusta_secret}
       POSTGRES_DB: ${POSTGRES_DB:-flibusta}
 
-      # Telegram
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS}
-      TELEGRAM_PROXY: socks5://tor:9050
-
-      # Пути (внутри контейнера)
-      INPX_PATH: /data/inpx/flibusta_fb2_local.inpx
-      TORRENT_DATA_PATH: /data/library
-      TEMP_DOWNLOAD_PATH: /app/tmp_downloads
+      INPX_PATH: ${INPX_PATH:-/data/flibusta_fb2_local.inpx}
+      TORRENT_DATA_PATH: ${TORRENT_DATA_PATH:-/data}
+      TEMP_DOWNLOAD_PATH: ${TEMP_DOWNLOAD_PATH:-/app/tmp_downloads}
       TEMP_DOWNLOAD_MAX_GB: ${TEMP_DOWNLOAD_MAX_GB:-20}
       TEMP_FILE_TTL_MINUTES: ${TEMP_FILE_TTL_MINUTES:-10}
 
-      # Приложение
-      APP_HOST: 0.0.0.0
-      APP_PORT: 8000
+      APP_HOST: ${APP_HOST:-0.0.0.0}
+      APP_PORT: ${APP_PORT:-8000}
       APP_DEBUG: ${APP_DEBUG:-false}
 
-      # Torrents (два торрента)
-      TORRENT_1_HASH: ${TORRENT_1_HASH}
-      TORRENT_1_MAGNET: ${TORRENT_1_MAGNET}
-      TORRENT_1_SAVE_PATH: /data/library
-      TORRENT_1_INPX: /data/inpx/flibusta_fb2_local.inpx
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS:-}
+      TELEGRAM_PROXY: ${TELEGRAM_PROXY:-socks5://tor:9050}
     ports:
       - "8000:8000"
     volumes:
-      # Библиотека (read-only)
-      - ${LIBRARY_PATH}:/data/library:ro
-      # INPX-каталоги
-      - ${INPX_DIR}:/data/inpx:ro
-      # Временные загрузки
+      - ${LIBRARY_PATH}:/data:ro
       - ./tmp_downloads:/app/tmp_downloads
-      # Логи
       - ./logs:/app/logs
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]

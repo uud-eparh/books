@@ -1,26 +1,47 @@
-# Python
+# ============================================================
+# .gitignore
+# Исключает файлы, которые НЕ должны попасть в git
+# ============================================================
+
+# --- Environment (секреты!) ---
+.env
+.env.docker
+
+# --- Python ---
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
 .venv/
 venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+build/
+dist/
 
-# Env
-.env
-
-# IDE
+# --- IDE ---
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Временные файлы
-tmp_downloads/
-*.log
-
-# OS
+# --- OS ---
 .DS_Store
 Thumbs.db
+desktop.ini
 
+# --- Логи и временные данные ---
+logs/
+*.log
+tmp_downloads/
 inpx_tmp/
+
+# --- Большие файлы (не коммитим!) ---
+*.inpx
+books.pdf
+test_torrent.fb2
+*.fb2
+
+# --- Docker (не обязательно, но можно) ---
+# (docker-compose.yml обычно коммитится)

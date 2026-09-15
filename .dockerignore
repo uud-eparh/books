@@ -1,0 +1,53 @@
+# ============================================================
+# .dockerignore
+# Исключает файлы, которые НЕ нужны в Docker-образе
+# ============================================================
+
+# --- Environment (секреты!) ---
+.env
+.env.docker
+.env.example
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Git ---
+.git/
+.gitignore
+
+# --- IDE ---
+.vscode/
+.idea/
+
+# --- Данные проекта (монтируются в runtime) ---
+logs/
+tmp_downloads/
+inpx_tmp/
+
+# --- Большие файлы (монтируются) ---
+flibusta_fb2_local.inpx
+*.inpx
+books.pdf
+test_torrent.fb2
+
+# --- Документация ---
+*.md
+README.md
+
+# --- Тесты ---
+tests/
+
+# --- Docker (не нужен внутри образа) ---
+Dockerfile
+docker-compose.yml
+.dockerignore
+docker/
