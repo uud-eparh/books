@@ -46,3 +46,5 @@ test_torrent.fb2
 
 # --- Docker (не обязательно, но можно) ---
 # (docker-compose.yml обычно коммитится)
+
+build.log

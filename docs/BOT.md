@@ -1,0 +1,457 @@
+# Telegram-бот — команды и сценарии
+
+Описание работы бота: команды, сценарии, клавиатуры, ограничения.
+
+## 📋 Содержание
+
+1. [Обзор](#обзор)
+2. [Команды](#команды)
+3. [Сценарии](#сценарии)
+4. [Клавиатуры](#клавиатуры)
+5. [Ограничения](#ограничения)
+6. [Whitelist](#whitelist)
+7. [Администрирование](#администрирование)
+8. [Технические детали](#технические-детали)
+
+---
+
+## Обзор
+
+**Имя бота:** `@flibusta_fb2_bot` (Book Hub)
+
+**Платформа:** aiogram 3.31
+
+**Транспорт:** long polling через SOCKS5 (Tor)
+
+**Роль:** альтернативный интерфейс к той же библиотеке, что и веб.
+
+**Ключевые отличия от веба:**
+- Нет корзины и batch (пока)
+- Нет пагинации поиска (только топ-20)
+- Мгновенная доставка `.fb2` прямо в чат
+- Работает **без браузера**
+
+---
+
+## Команды
+
+### `/start`
+
+**Приветствие и инструкция.**
+📚 Book Hub — библиотека FB2
+
+Я помогу найти и скачать книгу из локальной библиотеки.
+
+Как пользоваться:
+
+Просто напиши название книги, автора или серию
+
+Я покажу до 10 результатов
+
+Выбери книгу и нажми «Скачать»
+
+Команды:
+/start — это сообщение
+/help — помощь
+/about — о проекте
+
+text
+
+### `/help`
+
+**Подробная справка** с примерами запросов.
+
+### `/about`
+
+**Информация о проекте:** технологии, версия, размер каталога.
+
+### Текстовые сообщения (без `/`)
+
+**Поиск книг.** Любой текст → результат.
+
+**Примеры:**
+- `Романович` — все книги автора
+- `Алхимик` — по названию
+- `Шиноби [Паствырь]` — по серии
+
+---
+
+## Сценарии
+
+### 1. Поиск книги
+
+**Шаги:**
+
+1. Пользователь отправляет: `Романович`
+2. Бот показывает **«печатает…»**
+3. Через 1–3 сек — **список из 20 кнопок**:
+🔍 Найдено 243 по запросу «Романович».
+Показано 20 из 243:
+
+[📖 Гер — Романович Роман]
+[📖 Нож — Романович Роман]
+[📖 Упущенная жизнь — Романович Роман]
+...
+[📖 Алхимик — Алхимик [Паствырь] #1]
+
+text
+
+**Каждая кнопка** → `callback_data = "book:{lib_id}"`.
+
+### 2. Карточка книги
+
+**Шаги:**
+
+1. Пользователь кликает на книгу (`book:73488`)
+2. Бот **отправляет новое сообщение** (список **остаётся** выше):
+Клан
+👤 Романович Роман
+📚 Шиноби [Паствырь] #13
+ru · 816.9 KiB · 2024-06-24
+
+Спасание мира, параллельные миры, демоны,
+магические способности...
+
+[⬇ Скачать FB2]
+[👤 Все книги автора]
+[📚 Все книги серии]
+
+text
+
+**3 кнопки:**
+- `download:{lib_id}` — скачать
+- `author:{author_id}` — все книги автора
+- `series:{series_name}` — все книги серии (если серия есть)
+
+### 3. Скачивание книги
+
+**Шаги:**
+
+1. Пользователь кликает «⬇ Скачать FB2»
+2. Бот:
+   - Убирает «часики» (`callback.answer()`)
+   - Отправляет **новое** сообщение: `⏳ Скачиваю книгу…`
+   - Обновляет **раз в 2 сек**:
+⏳ Скачиваю через торрент: 0%…
+⏳ Скачиваю через торрент: 0%, ~3 сек…
+
+text
+3. По завершении:
+- **Удаляет** статусное сообщение
+- Отправляет `.fb2`:
+[📎 Romanovich,Roman - Klan.fb2 (816.9 KB)]
+📖 Клан
+👤 Романович Роман
+816.9 KiB · источник: torrent
+
+text
+
+**Имя файла** — транслит: `{Author} - {Title}.fb2`.
+
+**Источник:** `local_zip` (если ZIP на диске) или `torrent`.
+
+### 4. Все книги автора
+
+**Шаги:**
+
+1. Пользователь кликает «👤 Все книги автора» (`author:37523`)
+2. Бот **сохраняет контекст в FSM**:
+   ```python
+   ListContext(kind="author", key=37523, title="Романович Роман", page=1)
+Показывает список с пагинацией:
+
+text
+📚 Все книги автора
+👤 Романович Роман
+Найдено: 243 · страница 1 из 13
+
+[📖 Гер]
+[📖 Нож]
+[📖 Упущенная жизнь]
+[📖 Арка — Real-RPG]
+[📖 Алхимик — Алхимик [Паствырь] #1]
+...
+[⬅️ Назад] [Вперёд ➡️]
+Особенность: в кнопках нет автора (он в шапке) — только название и серия.
+
+5. Все книги серии
+Шаги:
+
+Пользователь кликает «📚 Все книги серии» (series:Шиноби [Паствырь])
+
+Бот сохраняет контекст:
+
+python
+ListContext(kind="series", key="Шиноби [Паствырь]", page=1)
+Показывает список с пагинацией:
+
+text
+📚 Серия: Шиноби [Паствырь]
+👤 Романович Роман
+Найдено: 11 · страница 1 из 1
+
+[📖 Шиноби. Книги I - XX — Шиноби [Паствырь]]
+[📖 Шестой ярус — Шиноби [Паствырь] #5]
+[📖 Клан — Шиноби [Паствырь] #13]
+[📖 Финал — Шиноби [Паствырь] #19]
+[📖 Эпилог — Шиноби [Паствырь] #20]
+...
+Особенность: в кнопках название — серия #N.
+
+6. Пагинация
+Callback: page:author:2 или page:series:3.
+
+Логика:
+
+Бот читает контекст из FSM:
+
+python
+data = await state.get_data()
+ctx = data["list_context"]
+# {"kind": "author", "key": 37523, "title": "Романович Роман", "page": 1}
+Загружает страницу N через search_by_author_id / search_books
+
+Показывает новое сообщение (старое остаётся выше)
+
+Если контекст устарел (перезапуск бота):
+
+text
+⚠️ Контекст устарел. Запусти поиск заново.
+Клавиатуры
+books_list_keyboard(books, mode="default")
+20 кнопок, по одной в ряд.
+
+Формат кнопки:
+
+mode	Формат
+default	📖 {title} — {authors}
+author	📖 {title} — {series} #{num}
+series	📖 {title} — {series} #{num}
+Callback: book:{lib_id}.
+
+Лимит: 64 символа на кнопку. Кириллица = 2 байта/символ.
+
+book_card_keyboard(book, author_id)
+3 кнопки:
+
+⬇ Скачать FB2 → download:{lib_id}
+
+👤 Все книги автора → author:{author_id}
+
+📚 Все книги серии → series:{name[:25]} (только если серия есть)
+
+Лимит callback_data: 64 байта. Серия обрезается до 25 символов.
+
+books_list_with_pagination_keyboard(books, kind, page, total_pages)
+20 кнопок + пагинация.
+
+Пагинация:
+
+⬅️ Назад → page:{kind}:{page-1} (если page > 1)
+
+Вперёд ➡️ → page:{kind}:{page+1} (если page < total_pages)
+
+Callback для пагинации содержит только kind и page — конкретный author_id/series берётся из FSM.
+
+Ограничения
+Ограничение	Значение
+Поиск: результатов в выдаче	20
+Автор/серия: книг на страницу	20
+Callback data	64 байта
+Длина сообщения	4096 символов
+Размер файла для send_document	50 МБ
+Whitelist	TELEGRAM_ALLOWED_USERS (пусто = публичный)
+FSM-хранилище	MemoryStorage (в ОЗУ, теряется при перезапуске)
+Про FSM
+FSM (Finite State Machine) хранит контекст пагинации (kind, key, page).
+
+MemoryStorage — в памяти процесса. При перезапуске бота — теряется.
+
+Практика: если пользователь кликнул «Вперёд» после перезапуска — увидит:
+
+text
+⚠️ Контекст устарел. Запусти поиск заново.
+Решение на будущее: RedisStorage (если понадобится долговременное хранение).
+
+Whitelist
+Переменная .env: TELEGRAM_ALLOWED_USERS
+
+Формат: ID через запятую.
+
+Пример:
+
+env
+TELEGRAM_ALLOWED_USERS=1582000521,945959773
+Режимы
+Значение	Режим
+Пусто	Публичный (любой может пользоваться)
+ID через запятую	Только указанные
+Как работает
+Middleware WhitelistMiddleware проверяет user.id при каждом событии:
+
+python
+if not self._allowed:
+    return await handler(event, data)   # публичный
+if user.id in self._allowed:
+    return await handler(event, data)   # разрешён
+# иначе — отказ
+Отказ — один раз отправляет сообщение:
+
+text
+🔒 Доступ к этому боту ограничен.
+Как узнать свой ID
+Открой @userinfobot
+
+/start
+
+Скопируй число (1582000521)
+
+Не username! Только числовой ID.
+
+Администрирование
+Проверить статус бота
+bash
+docker compose logs app | grep "Bot started"
+Ожидаем:
+
+text
+Bot started: @flibusta_fb2_bot (id=8724273214)
+INFO aiogram.dispatcher: Start polling
+Перезапустить бота
+bash
+docker compose restart app
+Перевыпустить токен
+Открой @BotFather
+
+/mybots → @flibusta_fb2_bot
+
+API Token → Revoke current token
+
+Скопируй новый токен
+
+Обнови .env и .env.docker:
+
+env
+TELEGRAM_BOT_TOKEN=<НОВЫЙ_ТОКЕН>
+Перезапусти:
+
+bash
+docker compose --env-file .env.docker up -d --force-recreate app
+Изменить whitelist
+Обнови .env и .env.docker:
+
+env
+TELEGRAM_ALLOWED_USERS=1582000521,945959773
+Перезапусти:
+
+bash
+docker compose --env-file .env.docker up -d --force-recreate app
+Открыть для всех
+env
+TELEGRAM_ALLOWED_USERS=
+Перезапусти. Бот публичный.
+
+Технические детали
+Запуск в lifespan FastAPI
+Бот и веб — в одном процессе.
+
+python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    setup_logging(...)
+    await setup_torrent_manager()
+
+    # Запуск бота в фоне
+    if settings.telegram_bot_token:
+        bot, dp = create_bot_and_dispatcher()
+        bot_task = asyncio.create_task(start_polling_async(bot, dp))
+
+    try:
+        yield
+    finally:
+        # Корректное завершение
+        bot_task.cancel()
+        await shutdown_torrent_manager()
+Long polling через SOCKS5
+app/bot/main.py:
+
+python
+def create_bot_and_dispatcher() -> tuple[Bot, Dispatcher]:
+    proxy_url = settings.telegram_proxy   # socks5://tor:9050
+    session = AiohttpSession(proxy=proxy_url)
+
+    bot = Bot(
+        token=settings.telegram_bot_token,
+        session=session,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
+    ...
+aiohttp-socks обеспечивает SOCKS5-подключение через Tor.
+
+Middlewares
+Порядок:
+
+python
+dp.message.middleware(WhitelistMiddleware())
+dp.callback_query.middleware(WhitelistMiddleware())
+dp.message.middleware(LoggingMiddleware())
+dp.callback_query.middleware(LoggingMiddleware())
+Whitelist — первым, чтобы не пропускать неавторизованных.
+
+Logging — вторым, чтобы логировать только разрешённые события.
+
+Структура файлов
+text
+app/bot/
+├── __init__.py
+├── main.py             — Bot, Dispatcher, polling
+├── middlewares.py      — Whitelist, Logging
+├── keyboards.py        — 3 типа клавиатур
+├── formatters.py       — форматирование текста
+├── states.py           — ListContext (FSM)
+└── handlers/
+    ├── __init__.py     — register_handlers()
+    ├── start.py        — /start, /help, /about
+    ├── search.py       — текстовый поиск
+    ├── book.py         — карточка (book:*)
+    ├── download.py     — скачивание (download:*)
+    ├── author.py       — автор (author:*, page:author:*)
+    └── series.py       — серия (series:*, page:series:*)
+Логи
+Стандартные:
+
+text
+← Message from user_id=1582000521 text='Романович'
+← Callback from user_id=1582000521 data='book:73488'
+Search query: 'Романович'
+В docker compose logs -f app — видно все взаимодействия.
+
+Что не реализовано (TODO)
+❌ Корзина в боте — сейчас каждая книга отдельно
+
+❌ Batch-загрузка — 20 книг → ZIP
+
+❌ Пагинация поиска — только топ-20
+
+❌ Отмена скачивания — если долго висит
+
+❌ Inline-режим (@bot query) — поиск из любого чата
+
+❌ Inline-шаринг — отправить книгу другу
+
+❌ Сохранение истории — какие книги скачал пользователь
+
+❌ Redis FSM — контекст не теряется при перезапуске
+
+Возможные направления развития.
+
+См. также
+ARCHITECTURE.md — как устроено
+
+API.md — HTTP-эндпоинты
+
+TROUBLESHOOTING.md — проблемы
+
+SETUP.md — установка
+
+UPDATE.md — обновление

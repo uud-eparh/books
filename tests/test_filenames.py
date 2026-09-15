@@ -13,7 +13,7 @@ from app.services.filenames import (
 
 class TestTransliterate:
     def test_basic_russian(self) -> None:
-        assert transliterate("Привет") == "Priviet"
+        assert transliterate("Привет") == "Privet"
         assert transliterate("Мир") == "Mir"
         assert transliterate("Книга") == "Knigha" or transliterate("Книга") == "Kniga"
 
@@ -29,7 +29,7 @@ class TestTransliterate:
 
     def test_yo_and_soft_sign(self) -> None:
         # ё → e, ь → ''
-        assert transliterate("ёж") == "iezh" or transliterate("ёж") == "yezh"
+        assert transliterate("ёж") == "ezh" or transliterate("ёж") == "yezh"
         assert transliterate("моль") == "mol"
 
 
