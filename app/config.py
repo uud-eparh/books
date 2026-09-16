@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_allowed_users: str = ""
     telegram_proxy: str = "socks5://127.0.0.1:9050"
+    telegram_admin_id: int = 0 
 
     # Paths
     inpx_path: Path = Path("/data/flibusta_fb2_local.inpx")
@@ -69,6 +70,11 @@ class Settings(BaseSettings):
             for uid in self.telegram_allowed_users.split(",")
             if uid.strip().isdigit()
         ]
+    
+    @property
+    def admin_id(self) -> int | None:
+        """ID админа для /message. None, если не задан."""
+        return self.telegram_admin_id if self.telegram_admin_id > 0 else None
 
 
 settings = Settings()
