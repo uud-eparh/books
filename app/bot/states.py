@@ -12,7 +12,7 @@ class ListContext:
 
     kind: Literal["author", "series"]
     key: int | str          # author_id (int) или series_name (str)
-    title: str              # для заголовка: «Романович Роман» или «Шиноби [Паствырь]»
+    title: str              # для заголовка: «Романович Роман» или «Шиноби [Пастырь]»
     total: int = 0
     page: int = 1
     page_size: int = 20
