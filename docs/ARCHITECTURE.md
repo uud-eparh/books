@@ -470,6 +470,7 @@ sequenceDiagram
 | `middlewares.py` | Whitelist + логирование |
 | `handlers/start.py` | `/start`, `/help`, `/about` |
 | `handlers/search.py` | Поиск по тексту |
+| `handlers/feedback.py` | Обратная связь (`/message`) |
 | `handlers/book.py` | Карточка книги |
 | `handlers/download.py` | Скачивание `.fb2` |
 | `handlers/author.py` | Список книг автора + пагинация |

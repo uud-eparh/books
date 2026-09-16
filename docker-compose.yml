@@ -59,7 +59,7 @@ services:
       TELEGRAM_ADMIN_ID: ${TELEGRAM_ADMIN_ID}
       TELEGRAM_PROXY: socks5://tor:9050
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ${LIBRARY_PATH}:/data:ro
       - ./tmp_downloads:/app/tmp_downloads
