@@ -54,27 +54,30 @@
 ### Где взять торрент?
 
 Ищи magnet-ссылку:
+
 - `fb2.Flibusta.Net` — **основная раздача** (~568 ГБ)
 - На трекерах: `booktracker.work`, `rutracker.org`
 
 **Пример magnet:**
-magnet:?xt=urn:btih:<INFOHASH>&dn=fb2.Flibusta.Net&tr=...
 
-text
+```
+magnet:?xt=urn:btih:<INFOHASH>&dn=fb2.Flibusta.Net&tr=...
+```
 
 **Сохрани** `INFOHASH` (40 hex-символов) — понадобится.
 
 ### Структура файлов
 
 После скачивания торрента папка **выглядит так:**
+
+```
 fb2.Flibusta.Net/
 ├── fb2-000024-030559.zip
 ├── fb2-030560-060423.zip
 ├── ...
 ├── f.fb2-875653-879581.zip
 └── flibusta_fb2_local.inpx
-
-text
+```
 
 **Путь к этой папке** пойдёт в `LIBRARY_PATH` (см. ниже).
 
@@ -94,36 +97,57 @@ text
 ```bash
 docker --version
 docker compose version
-Ожидаем:
+```
 
-text
+**Ожидаем:**
+
+```
 Docker version 27.x.x
 Docker Compose version v2.x.x
-WSL2 (обязательно для Windows)
-Docker Desktop использует WSL2. Проверь:
+```
 
-bash
+### WSL2 (обязательно для Windows)
+
+Docker Desktop использует **WSL2**. Проверь:
+
+```bash
 wsl --status
-Если WSL не установлен:
+```
 
-bash
+**Если WSL не установлен:**
+
+```bash
 wsl --install
-Linux
-bash
+```
+
+### Linux
+
+```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 newgrp docker
-Настройка окружения
-1. Клонируй репозиторий
-bash
+```
+
+---
+
+## Настройка окружения
+
+### 1. Клонируй репозиторий
+
+```bash
 git clone <your-repo-url> book-hub
 cd book-hub
-2. Создай .env (для локальной разработки)
-bash
-cp .env.example .env
-Открой .env:
+```
 
-env
+### 2. Создай `.env` (для локальной разработки)
+
+```bash
+cp .env.example .env
+```
+
+**Открой `.env`:**
+
+```env
 # === PostgreSQL ===
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
@@ -134,7 +158,7 @@ POSTGRES_DB=flibusta
 # === Telegram ===
 TELEGRAM_BOT_TOKEN=<ТОКЕН>
 TELEGRAM_ALLOWED_USERS=<ТВОЙ_ID>
-TELEGRAM_PROXY=socks5://127.0.0.1:9050   # локальный Tor
+TELEGRAM_PROXY=socks5://127.0.0.1:9050
 
 # === Пути (Windows-стиль) ===
 INPX_PATH=D:/Users/Downloads/fb2.Flibusta.Net/flibusta_fb2_local.inpx
@@ -144,12 +168,17 @@ TEMP_DOWNLOAD_PATH=./tmp_downloads
 # === Torrent ===
 TORRENT_HASH=<INFOHASH>
 TORRENT_MAGNET=<MAGNET>
-3. Создай .env.docker (для Docker)
-bash
-cp .env.example .env.docker
-Открой .env.docker:
+```
 
-env
+### 3. Создай `.env.docker` (для Docker)
+
+```bash
+cp .env.example .env.docker
+```
+
+**Открой `.env.docker`:**
+
+```env
 # === PostgreSQL (внутри Docker-сети) ===
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
@@ -160,7 +189,7 @@ POSTGRES_DB=flibusta
 # === Telegram ===
 TELEGRAM_BOT_TOKEN=<ТОКЕН>
 TELEGRAM_ALLOWED_USERS=<ТВОЙ_ID>
-TELEGRAM_PROXY=socks5://tor:9050   # Tor-контейнер
+TELEGRAM_PROXY=socks5://tor:9050
 
 # === Пути (внутри контейнера) ===
 INPX_PATH=/data/flibusta_fb2_local.inpx
@@ -168,160 +197,207 @@ TORRENT_DATA_PATH=/data
 TEMP_DOWNLOAD_PATH=/app/tmp_downloads
 
 # === Docker volumes ===
-LIBRARY_PATH=D:/Users/Downloads/fb2.Flibusta.Net   # ← путь на ХОСТЕ
-Где взять Telegram-токен и ID
-Токен:
+LIBRARY_PATH=D:/Users/Downloads/fb2.Flibusta.Net
+```
 
-Открой @BotFather
+### Где взять Telegram-токен и ID
 
-/newbot → придумай имя
+**Токен:**
 
-Скопируй токен (вида 123456:ABC-DEF...)
+1. Открой [@BotFather](https://t.me/BotFather)
+2. `/newbot` → придумай имя
+3. Скопируй токен (вида `123456:ABC-DEF...`)
 
-Свой ID:
+**Свой ID:**
 
-Открой @userinfobot
+1. Открой [@userinfobot](https://t.me/userinfobot)
+2. `/start` → получишь ID (число)
+3. Вставь в `TELEGRAM_ALLOWED_USERS`
 
-/start → получишь ID (число)
+---
 
-Вставь в TELEGRAM_ALLOWED_USERS
+## Запуск
 
-Запуск
-1. Собери образы
-bash
+### 1. Собери образы
+
+```bash
 docker compose --env-file .env.docker build
-Первая сборка — 5–15 минут. Скачается Ubuntu, Python, libtorrent, Alpine.
+```
 
-2. Запусти контейнеры
-bash
+**Первая сборка — 5–15 минут.** Скачается Ubuntu, Python, libtorrent, Alpine.
+
+### 2. Запусти контейнеры
+
+```bash
 docker compose --env-file .env.docker up -d
-3. Проверь статус
-bash
-docker compose --env-file .env.docker ps
-Ожидаем:
+```
 
-text
+### 3. Проверь статус
+
+```bash
+docker compose --env-file .env.docker ps
+```
+
+**Ожидаем:**
+
+```
 NAME                STATUS
 flibusta_postgres   Up (healthy)
 flibusta_tor        Up
 flibusta_app        Up (healthy)
-4. Проверь логи
-bash
-docker compose logs -f app
-Ожидаем:
+```
 
-text
+### 4. Проверь логи
+
+```bash
+docker compose logs -f app
+```
+
+**Ожидаем:**
+
+```
 🤖 Telegram bot started
 Bot started: @your_bot_name (id=...)
 INFO aiogram.dispatcher: Start polling
-Если бот не запустился — смотри TROUBLESHOOTING.md.
+```
 
-Первичная инициализация БД
-Один раз — загрузить данные из .inpx в PostgreSQL.
+**Если бот не запустился** — смотри [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
-1. Зарегистрируй торрент
-bash
+---
+
+## Первичная инициализация БД
+
+**Один раз** — загрузить данные из `.inpx` в PostgreSQL.
+
+### 1. Зарегистрируй торрент
+
+```bash
 docker compose exec app python -m scripts.register_torrent \
     --hash <INFOHASH> \
     --name "fb2.Flibusta.Net" \
     --magnet "<MAGNET>" \
     --save-path /data
-Ожидаем:
+```
 
-text
+**Ожидаем:**
+
+```
 ✅ Торрент зарегистрирован: id=1
-2. Индексируй торрент
-bash
+```
+
+### 2. Индексируй торрент
+
+```bash
 docker compose exec app python -m scripts.index_torrent --torrent-id 1
-Займёт 1–3 минуты. Получим 221 файл с byte_offset и piece_start/end.
+```
 
-Ожидаем:
+**Займёт 1–3 минуты.** Получим **221 файл** с `byte_offset` и `piece_start/end`.
 
-text
+**Ожидаем:**
+
+```
 ✅ Сохранено: 221 файлов, resume_data=728273 bytes
-3. Загрузи книги
-bash
+```
+
+### 3. Загрузи книги
+
+```bash
 docker compose exec app python -m scripts.load_books \
     --torrent-id 1 \
     --inpx /data/flibusta_fb2_local.inpx
-Займёт 5–15 минут. Загрузим 699 504 книги.
+```
 
-4. Индексируй ZIP-архивы
-bash
+**Займёт 5–15 минут.** Загрузим **699 504 книги**.
+
+### 4. Индексируй ZIP-архивы
+
+```bash
 docker compose exec app python -m scripts.index_archives --torrent-id 1
-Займёт 2–5 минут. Получим 699 560 записей в archive_entries.
+```
 
-5. Обнови save_path
-bash
+**Займёт 2–5 минут.** Получим **699 560 записей** в `archive_entries`.
+
+### 5. Обнови save_path
+
+```bash
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c \
     "UPDATE torrents SET save_path = '/data' WHERE id = 1;"
 docker compose restart app
-Проверка работы
-Веб-интерфейс
-Открой http://localhost:8000
-
-Попробуй:
-
-Введи Романович → нажми «Найти»
-
-Кликни на книгу → карточка
-
-Добавь 3 книги в корзину → «Скачать ZIP»
-
-Telegram-бот
-Открой @your_bot_name → /start
-
-Попробуй:
-
-Напиши Ремарк → выбери книгу → «⬇ Скачать FB2»
-
-Проверка скачивания
-Если книга есть локально (ZIP-архив на диске) — скачается за 50–150 мс.
-Если нет — скачается через торрент (2–30 секунд).
-
-Обновление
-Обновление кода
-bash
-git pull
-docker compose --env-file .env.docker build app
-docker compose --env-file .env.docker up -d --force-recreate app
-Обновление каталога .inpx
-См. UPDATE.md.
-
-Остановка и удаление
-Остановить (сохранить данные)
-bash
-docker compose --env-file .env.docker down
-Остановить и удалить БД
-bash
-docker compose --env-file .env.docker down -v
-Внимание: -v удаляет volume postgres_data — все данные из БД пропадут. Их придётся загружать заново из .inpx.
-
-Полное удаление образов
-bash
-docker compose --env-file .env.docker down -v --rmi all
-Что дальше?
-ARCHITECTURE.md — как устроено
-
-BOT.md — сценарии Telegram-бота
-
-API.md — HTTP-эндпоинты
-
-TROUBLESHOOTING.md — если что-то не работает
-
-UPDATE.md — обновление библиотеки
-
-text
+```
 
 ---
 
-## 🚦 Что делаешь
+## Проверка работы
 
-### 1. Удали `build.log`
+### Веб-интерфейс
+
+Открой http://localhost:8000
+
+**Попробуй:**
+
+- Введи `Романович` → нажми «Найти»
+- Кликни на книгу → карточка
+- Добавь 3 книги в корзину → «Скачать ZIP»
+
+### Telegram-бот
+
+Открой `@your_bot_name` → `/start`
+
+**Попробуй:**
+
+- Напиши `Ремарк` → выбери книгу → «⬇ Скачать FB2»
+
+### Проверка скачивания
+
+Если книга **есть локально** (ZIP-архив на диске) — скачается **за 50–150 мс**.
+Если **нет** — скачается **через торрент** (2–30 секунд).
+
+---
+
+## Обновление
+
+### Обновление кода
 
 ```bash
-rm build.log
-И добавь в .gitignore:
+git pull
+docker compose --env-file .env.docker build app
+docker compose --env-file .env.docker up -d --force-recreate app
+```
 
-text
-build.log
+### Обновление каталога `.inpx`
+
+См. [UPDATE.md](UPDATE.md).
+
+---
+
+## Остановка и удаление
+
+### Остановить (сохранить данные)
+
+```bash
+docker compose --env-file .env.docker down
+```
+
+### Остановить и удалить БД
+
+```bash
+docker compose --env-file .env.docker down -v
+```
+
+**Внимание:** `-v` **удаляет volume** `postgres_data` — **все данные из БД пропадут**. Их придётся **загружать заново** из `.inpx`.
+
+### Полное удаление образов
+
+```bash
+docker compose --env-file .env.docker down -v --rmi all
+```
+
+---
+
+## Что дальше?
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — как устроено
+- **[BOT.md](BOT.md)** — сценарии Telegram-бота
+- **[API.md](API.md)** — HTTP-эндпоинты
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — если что-то не работает
+- **[UPDATE.md](UPDATE.md)** — обновление библиотеки

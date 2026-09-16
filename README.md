@@ -38,33 +38,37 @@
 git clone <your-repo-url> book-hub
 cd book-hub
 ```
-2. Настройка окружения
-Создай .env и .env.docker:
+
+### 2. Настройка окружения
+
+Создай `.env` и `.env.docker`:
 
 ```bash
 cp .env.example .env
 cp .env.example .env.docker
 ```
-Заполни в обоих:
 
-TELEGRAM_BOT_TOKEN — токен от @BotFather
+**Заполни в обоих:**
 
-TELEGRAM_ALLOWED_USERS — твой Telegram ID (от @userinfobot)
+- `TELEGRAM_BOT_TOKEN` — токен от [@BotFather](https://t.me/BotFather)
+- `TELEGRAM_ALLOWED_USERS` — твой Telegram ID (от [@userinfobot](https://t.me/userinfobot))
+- `LIBRARY_PATH` (только в `.env.docker`) — путь к папке с ZIP-архивами
+- `INPX_PATH` — путь к `.inpx`-файлу
 
-LIBRARY_PATH (только в .env.docker) — путь к папке с ZIP-архивами
+### 3. Запуск
 
-INPX_PATH — путь к .inpx-файлу
-
-3. Запуск
 ```bash
 docker compose --env-file .env.docker up -d
 ```
-Первая сборка — 5–15 минут.
 
-4. Первичная инициализация БД
-Один раз — загрузить книги из .inpx в БД:
+**Первая сборка — 5–15 минут.**
+
+### 4. Первичная инициализация БД
+
+**Один раз** — загрузить книги из `.inpx` в БД:
 
 ```bash
+# Индексация торрента (метаданные, piece-диапазоны)
 docker compose exec app python -m scripts.index_torrent --torrent-id 1
 
 # Загрузка книг (699 504 записи, ~8 минут)
@@ -74,12 +78,16 @@ docker compose exec app python -m scripts.load_books \
 # Индексация ZIP-архивов (699 560 записей, ~2 минуты)
 docker compose exec app python -m scripts.index_archives --torrent-id 1
 ```
-5. Готово!
-Веб: http://localhost:8000
 
-Бот: @flibusta_fb2_bot → /start
+### 5. Готово!
+
+- **Веб:** http://localhost:8000
+- **Бот:** `@flibusta_fb2_bot` → `/start`
+
+---
 
 ## 📖 Подробная документация
+
 | Документ | О чём |
 |----------|-------|
 | [SETUP.md](docs/SETUP.md) | Подробная инструкция по установке (Windows + Linux + Docker) |
@@ -88,34 +96,45 @@ docker compose exec app python -m scripts.index_archives --torrent-id 1
 | [API.md](docs/API.md) | HTTP-эндпоинты веб-интерфейса |
 | [BOT.md](docs/BOT.md) | Команды и сценарии Telegram-бота |
 | [UPDATE.md](docs/UPDATE.md) | Обновление библиотеки, добавление торрентов |
+
+---
+
 ## 🏗️ Архитектура (кратко)
-```text
-┌─────────────────────────────────────────────────────┐
-│                    Docker Compose                    │
-├─────────────────────────────────────────────────────┤
-│                                                      │
-│  ┌──────────────┐    ┌──────────────┐              │
-│  │  postgres    │    │  tor         │              │
-│  │  (БД)        │    │  (SOCKS5)    │              │
-│  └──────────────┘    └──────────────┘              │
-│         │                    │                      │
-│         └────────┬───────────┘                      │
-│                  ▼                                   │
-│         ┌──────────────────┐                        │
-│         │  app             │                        │
-│         │  (FastAPI+бот+   │                        │
-│         │   libtorrent)    │                        │
-│         └──────────────────┘                        │
-│                  │                                   │
-│                  ▼ (mount)                           │
-│         ┌──────────────────┐                        │
-│         │  /data           │  ← ZIP-архивы Флибусты │
-│         │  (568 ГБ)        │     (read-only)        │
-│         └──────────────────┘                        │
-└─────────────────────────────────────────────────────┘
-Подробнее: ARCHITECTURE.md
+
+```mermaid
+flowchart TB
+    subgraph Docker["🐳 Docker Compose"]
+        direction TB
+
+        subgraph Data["Data Layer"]
+            direction LR
+            PG[("🐘 postgres<br/>PostgreSQL 16<br/>(БД)")]
+            TOR["🌐 tor<br/>Alpine + lyrebird<br/>(SOCKS5 :9050)"]
+        end
+
+        APP["📦 app<br/>Ubuntu 24.04 + Python 3.12<br/>FastAPI + aiogram + libtorrent"]
+
+        DATA[("/data (read-only)<br/>ZIP-архивы Флибусты<br/>568 ГБ + .inpx")]
+    end
+
+    PG -.SQL.-> APP
+    TOR -.SOCKS5.-> APP
+    APP -.mount.-> DATA
+
+    style Docker fill:#f0f9ff,stroke:#0369a1,stroke-width:2px
+    style Data fill:#e0f2fe,stroke:#0284c7
+    style PG fill:#dbeafe
+    style TOR fill:#fce7f3
+    style APP fill:#fff7ed
+    style DATA fill:#f0fdf4
 ```
+
+**Подробнее:** [ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+---
+
 ## 🧪 Тесты
+
 ```bash
 # Создать тестовую БД
 docker exec -it flibusta_postgres psql -U flibusta -d postgres -c "CREATE DATABASE flibusta_test;"
@@ -125,21 +144,30 @@ python -m scripts.init_test_db
 
 # Запустить тесты
 pytest tests/ -v
-36 тестов покрывают парсер .inpx, ZIP-reader, транслитерацию, поиск, вычисление piece-ов.
 ```
+
+**36 тестов** покрывают парсер `.inpx`, ZIP-reader, транслитерацию, поиск, вычисление piece-ов.
+
+---
+
 ## 🛠️ Стек
-Backend: Python 3.12, FastAPI, aiogram 3.x
 
-БД: PostgreSQL 16 (FTS, GIN, trigram)
+- **Backend:** Python 3.12, FastAPI, aiogram 3.x
+- **БД:** PostgreSQL 16 (FTS, GIN, trigram)
+- **Torrent:** libtorrent 2.0.10
+- **Frontend:** Jinja2, минимальный CSS, vanilla JS
+- **Инфраструктура:** Docker Compose, Tor (WebTunnel-мосты)
 
-Torrent: libtorrent 2.0.10
-
-Frontend: Jinja2, минимальный CSS, vanilla JS
-
-Инфраструктура: Docker Compose, Tor (WebTunnel-мосты)
+---
 
 ## 📄 Лицензия
-MIT — используй как хочешь, модифицируй, продавай.
+
+[MIT](LICENSE) — используй как хочешь, модифицируй, продавай.
+
+---
 
 ## 🙏 Благодарности
-Флибуста — за каталог и раздачу
+
+- **Флибуста** — за каталог и раздачу
+- **Tor Project** — за WebTunnel-мосты
+- **aiogram, FastAPI, SQLAlchemy** — за отличные библиотеки

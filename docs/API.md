@@ -11,6 +11,8 @@
 5. [Batch API](#batch-api)
 6. [Файлы и скачивание](#файлы-и-скачивание)
 7. [Примеры](#примеры)
+8. [Коды ответов](#коды-ответов)
+9. [Ограничения](#ограничения)
 
 ---
 
@@ -50,8 +52,10 @@
 | `page_size` | int | `50` | Размер страницы (1–200) |
 
 **Пример:**
-GET /search?q=матриархат&field=title&page=1
 
+```
+GET /search?q=матриархат&field=title&page=1
+```
 
 **Ответ:** HTML с результатами.
 
@@ -60,15 +64,19 @@ GET /search?q=матриархат&field=title&page=1
 **Карточка книги.**
 
 **Параметры пути:**
+
 - `lib_id` — LibID из `.inpx`
 
 **Пример:**
-GET /book/811194
 
+```
+GET /book/811194
+```
 
 **Ответ:** HTML.
 
 **Ошибки:**
+
 - `404` — книга не найдена
 
 ### `GET /author/{author_id}`
@@ -76,12 +84,14 @@ GET /book/811194
 **Все книги автора** с пагинацией.
 
 **Параметры пути:**
+
 - `author_id` — ID автора в БД
 
 **Пример:**
+
+```
 GET /author/37523?page=1
-
-
+```
 
 **Ответ:** HTML.
 
@@ -97,8 +107,10 @@ GET /author/37523?page=1
 | `page` | int | Номер страницы |
 
 **Пример:**
-GET /authors?q=Пушкин
 
+```
+GET /authors?q=Пушкин
+```
 
 **Ответ:** HTML.
 
@@ -107,6 +119,7 @@ GET /authors?q=Пушкин
 **Страница прогресса скачивания** (для торрент-режима).
 
 **Параметры пути:**
+
 - `lib_id` — LibID книги
 
 **Ответ:** HTML с SSE-подключением.
@@ -116,6 +129,7 @@ GET /authors?q=Пушкин
 **Страница прогресса batch-загрузки.**
 
 **Параметры пути:**
+
 - `job_id` — UUID задачи
 
 **Ответ:** HTML.
@@ -138,10 +152,13 @@ GET /authors?q=Пушкин
 | `page_size` | int | `50` | Размер страницы |
 
 **Пример:**
-GET /api/search?q=Романович&field=author&page=1
 
+```
+GET /api/search?q=Романович&field=author&page=1
+```
 
 **Ответ:**
+
 ```json
 {
   "query": "Романович",
@@ -160,23 +177,27 @@ GET /api/search?q=Романович&field=author&page=1
       "language": "ru",
       "file_size": 1048576,
       "is_deleted": false
-    },
-    ...
+    }
   ]
 }
 ```
 
 ### `GET /api/cart/preview`
-Информация о книгах в корзине (для модалки).
+
+**Информация о книгах в корзине** (для модалки).
 
 **Query-параметры:**
 
-| Параметр | Тип	| Описание |
-| --- | --- | --- |
-| lib_ids |	str | Comma-separated LibID (до 20)|
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| `lib_ids` | str | Comma-separated LibID (до 20) |
 
 **Пример:**
+
+```
 GET /api/cart/preview?lib_ids=811194,811195,811196
+```
+
 **Ответ:**
 
 ```json
@@ -186,71 +207,76 @@ GET /api/cart/preview?lib_ids=811194,811195,811196
       "lib_id": 811194,
       "title": "Чертова невеста правильного парень",
       "authors_text": "Джейн,О. О."
-    },
-    ...
+    }
   ]
 }
 ```
+
 ### `GET /health`
-**Пример:** Health check (для Docker healthcheck).
+
+**Health check** (для Docker healthcheck).
 
 **Ответ:**
 
 ```json
 {"status": "ok"}
-SSE (Server-Sent Events)
-GET /events/download/{lib_id}
 ```
-Поток прогресса скачивания одной книги.
 
-**Формат:** text/event-stream.
+---
 
-События:
+## SSE (Server-Sent Events)
 
-```text
+### `GET /events/download/{lib_id}`
+
+**Поток прогресса скачивания одной книги.**
+
+**Формат:** `text/event-stream`.
+
+**События:**
+
+```
 data: {"lib_id": 811194, "status": "downloading", "pieces_done": 0, "pieces_total": 1, "progress_percent": 0.0, "eta_seconds": null, "elapsed_seconds": 0.0}
 
 data: {"lib_id": 811194, "status": "downloading", "pieces_done": 0, "pieces_total": 1, "progress_percent": 0.0, "eta_seconds": 3, "elapsed_seconds": 2.5}
 
 data: {"lib_id": 811194, "status": "done", "pieces_done": 1, "pieces_total": 1, "progress_percent": 100.0, "elapsed_seconds": 6.1, "source": "torrent"}
 ```
+
 **Статусы:**
 
-pending — в очереди
-
-downloading — активно качается
-
-done — готово
-
-error — ошибка
+- `pending` — в очереди
+- `downloading` — активно качается
+- `done` — готово
+- `error` — ошибка
 
 ### `GET /events/batch/{job_id}`
-Поток прогресса batch-загрузки.
+
+**Поток прогресса batch-загрузки.**
 
 **События:**
 
-```text
+```
 data: {"job_id": "e2fe08de-...", "status": "downloading", "done_books": 3, "total_books": 6, "progress_percent": 50.0, "completed_lib_ids": [811194, 811195, 811196], "failed_lib_ids": [], "current_lib_id": 811197}
 
-data: {"job_id": "e2fe08de-...", "status": "ready", "done_books": 6, "total_books": 6, "progress_percent": 100.0, "file_size": 14883018, "completed_lib_ids": [811194, ..., 811199]}
+data: {"job_id": "e2fe08de-...", "status": "ready", "done_books": 6, "total_books": 6, "progress_percent": 100.0, "file_size": 14883018, "completed_lib_ids": [811194, 811199]}
 ```
+
 **Статусы:**
 
-pending
+- `pending`
+- `downloading`
+- `packing` — упаковка в ZIP
+- `ready` — готово
+- `error`
+- `cancelled`
 
-downloading
-
-packing — упаковка в ZIP
-
-ready — готово
-
-error
-
-cancelled
+---
 
 ## Batch API
+
 ### `POST /api/batch`
-Создать batch-задачу.
+
+**Создать batch-задачу.**
 
 **Тело запроса:**
 
@@ -259,13 +285,12 @@ cancelled
   "lib_ids": [811194, 811195, 811196]
 }
 ```
+
 **Ограничения:**
 
-Максимум 20 книг в одном batch
-
-Максимум 50 МБ на ZIP
-
-Дубликаты удаляются автоматически
+- **Максимум 20 книг** в одном batch
+- **Максимум 50 МБ** на ZIP
+- Дубликаты **удаляются** автоматически
 
 **Ответ (200):**
 
@@ -276,6 +301,7 @@ cancelled
   "status": "pending"
 }
 ```
+
 **Ошибка (400):**
 
 ```json
@@ -283,8 +309,10 @@ cancelled
   "detail": "Максимум 20 книг в одном пакете, получено 25"
 }
 ```
+
 ### `GET /api/batch/{job_id}`
-Статус batch-задачи.
+
+**Статус batch-задачи.**
 
 **Ответ (200):**
 
@@ -306,81 +334,92 @@ cancelled
   "finished_at": null
 }
 ```
+
 **Ошибка (404):**
 
 ```json
 {"detail": "Batch не найден"}
-POST /api/batch/{job_id}/cancel
 ```
-Отменить batch-задачу.
+
+### `POST /api/batch/{job_id}/cancel`
+
+**Отменить batch-задачу.**
 
 **Ответ (200):**
 
 ```json
 {
   "job_id": "e2fe08de-...",
-  "status": "cancelled",
-  ...
+  "status": "cancelled"
 }
 ```
+
+---
+
 ## Файлы и скачивание
+
 ### `GET /book/{lib_id}/download`
-Скачать одну книгу в формате .fb2.
+
+**Скачать одну книгу в формате `.fb2`.**
 
 **Логика:**
 
-Если ZIP локально → отдаём сразу (~150 мс)
-
-Если нет → редирект на /download/{lib_id} (с прогрессом)
+1. Если ZIP **локально** → отдаём **сразу** (~150 мс)
+2. Если **нет** → **редирект** на `/download/{lib_id}` (с прогрессом)
 
 **Ответ:**
 
-200 — .fb2-файл
-
-302 — редирект на страницу прогресса
+- **200** — `.fb2`-файл
+- **302** — редирект на страницу прогресса
 
 **Заголовки:**
 
-```text
+```
 Content-Type: application/fb2+xml
 Content-Disposition: attachment; filename*=UTF-8''Author%20-%20Title.fb2
 Content-Length: 863041
-X-Source: local_zip | torrent
+X-Source: local_zip
 X-Elapsed: 0.15
-GET /download/{lib_id}/file
 ```
-Скачать готовую книгу (после SSE-прогресса).
+
+### `GET /download/{lib_id}/file`
+
+**Скачать готовую книгу** (после SSE-прогресса).
 
 **Ответ:**
 
-200 — .fb2-файл
-
-404 — если файл не готов
+- **200** — `.fb2`-файл
+- **404** — если файл не готов
 
 ### `GET /batch/{job_id}/file`
-Скачать ZIP-архив с batch-загрузкой.
+
+**Скачать ZIP-архив** с batch-загрузкой.
 
 **Ответ:**
 
-200 — ZIP-файл
-
-404 — если не готов
+- **200** — ZIP-файл
+- **404** — если не готов
 
 **Заголовки:**
 
-```text
+```
 Content-Type: application/zip
 Content-Disposition: attachment; filename*=UTF-8''Flibusta_2026-09-15_e2fe08.zip
 Content-Length: 14883018
 ```
+
+---
+
 ## Примеры
-### `c URL`
+
+### cURL
 
 **Поиск:**
 
 ```bash
 curl "http://localhost:8000/api/search?q=Романович&field=author"
 ```
+
 **Создать batch:**
 
 ```bash
@@ -388,17 +427,22 @@ curl -X POST http://localhost:8000/api/batch \
     -H "Content-Type: application/json" \
     -d '{"lib_ids": [811194, 811195, 811196]}'
 ```
+
 **Статус batch:**
 
 ```bash
 curl "http://localhost:8000/api/batch/e2fe08de-8f77-412b-a65b-63206351f825"
 ```
+
 **Скачать книгу:**
 
 ```bash
 curl -OJ "http://localhost:8000/book/811194/download"
-Python (httpx)
-python
+```
+
+### Python (httpx)
+
+```python
 import httpx
 
 # Поиск
@@ -430,7 +474,8 @@ async with httpx.AsyncClient() as client:
             async for chunk in r.aiter_bytes():
                 f.write(chunk)
 ```
-### `JavaScript (fetch + EventSource)`
+
+### JavaScript (fetch + EventSource)
 
 ```javascript
 // Поиск
@@ -457,15 +502,20 @@ es.onmessage = (event) => {
     }
 };
 ```
+
+---
+
 ## Коды ответов
 
-| Код	| Значение |
+| Код | Значение |
 |-----|----------|
-| 200	| OK |
-| 302	| Found (редирект)|
-| 400	| Bad Request (невалидные параметры) |
-| 404	| Not Found |
-| 500	| Internal Server Error |
+| 200 | OK |
+| 302 | Found (редирект) |
+| 400 | Bad Request (невалидные параметры) |
+| 404 | Not Found |
+| 500 | Internal Server Error |
+
+---
 
 ## Ограничения
 
@@ -476,3 +526,12 @@ es.onmessage = (event) => {
 | Page size (search) | 1–200 |
 | Каталог книг | 699 504 |
 | Каталог авторов | 169 869 |
+
+---
+
+## См. также
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — как устроено
+- **[BOT.md](BOT.md)** — Telegram-бот (параллельный интерфейс)
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** — проблемы
+- **[SETUP.md](SETUP.md)** — установка

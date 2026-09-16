@@ -22,51 +22,62 @@
 **Причина:** Docker не установлен или не в PATH.
 
 **Решение:**
+
 - **Windows/macOS:** установи [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - **Linux:** `curl -fsSL https://get.docker.com | sh`
 
 **Проверка:**
+
 ```bash
 docker --version
 docker compose version
-Cannot connect to the Docker daemon
-Причина: Docker Desktop не запущен.
+```
 
-Решение:
+### `Cannot connect to the Docker daemon`
 
-Открой Docker Desktop
+**Причина:** Docker Desktop не запущен.
 
-Дождись зелёной иконки в трее
+**Решение:**
 
-Проверь: docker ps
+1. Открой **Docker Desktop**
+2. Дождись **зелёной иконки** в трее
+3. Проверь: `docker ps`
 
-Port 5432 is already in use
-Причина: порт 5432 занят — вероятно, другой PostgreSQL или второй контейнер.
+### `Port 5432 is already in use`
 
-Решение A: останови локальный PostgreSQL:
+**Причина:** порт 5432 занят — вероятно, **другой PostgreSQL** или **второй контейнер**.
 
-Windows:
+**Решение A:** останови локальный PostgreSQL.
 
-bash
+**Windows:**
+
+```bash
 # Открой services.msc → PostgreSQL → Stop
-Linux:
+```
 
-bash
+**Linux:**
+
+```bash
 sudo systemctl stop postgresql
-Решение B: измени порт в docker-compose.yml:
+```
 
-yaml
+**Решение B:** измени порт в `docker-compose.yml`:
+
+```yaml
 postgres:
   ports:
     - "5433:5432"   # ← 5433 вместо 5432
-И в .env: POSTGRES_PORT=5433.
+```
 
-Port 8000 is already in use
-Причина: порт 8000 занят (например, локальным uvicorn).
+И в `.env`: `POSTGRES_PORT=5433`.
 
-Решение:
+### `Port 8000 is already in use`
 
-bash
+**Причина:** порт 8000 занят (например, локальным `uvicorn`).
+
+**Решение:**
+
+```bash
 # Windows
 netstat -ano | findstr :8000
 taskkill /PID <PID> /F
@@ -74,119 +85,159 @@ taskkill /PID <PID> /F
 # Linux / Git Bash
 lsof -i :8000
 kill -9 <PID>
-Или измени порт в docker-compose.yml:
+```
 
-yaml
+Или измени порт в `docker-compose.yml`:
+
+```yaml
 app:
   ports:
     - "8001:8000"
-PostgreSQL
-Connection refused при старте app
-Симптомы:
+```
 
-text
+---
+
+## PostgreSQL
+
+### `Connection refused` при старте `app`
+
+**Симптомы:**
+
+```
 asyncpg.exceptions.ConnectionDoesNotExistError: connection was closed in the middle of operation
 ConnectionRefusedError: [Errno 111] Connection refused
-Причина: app подключается к localhost:5432 вместо postgres:5432.
+```
 
-Решение: в docker-compose.yml для app должно быть:
+**Причина:** `app` подключается к `localhost:5432` вместо `postgres:5432`.
 
-yaml
+**Решение:** в `docker-compose.yml` для `app` должно быть:
+
+```yaml
 environment:
   POSTGRES_HOST: postgres     # ← НЕ localhost, НЕ ${POSTGRES_HOST}
   POSTGRES_PORT: 5432
-Проверка:
+```
 
-bash
+**Проверка:**
+
+```bash
 docker compose exec app env | grep POSTGRES_HOST
 # Ожидаем: POSTGRES_HOST=postgres
-Если localhost — правь docker-compose.yml и:
+```
 
-bash
+**Если `localhost`** — правь `docker-compose.yml` и:
+
+```bash
 docker compose --env-file .env.docker up -d --force-recreate app
-FATAL: password authentication failed
-Причина: пароль в .env.docker не совпадает с паролем в volume БД.
+```
 
-Решение: если БД пустая — удали volume и пересоздай:
+### `FATAL: password authentication failed`
 
-bash
+**Причина:** пароль в `.env.docker` **не совпадает** с паролем в volume БД.
+
+**Решение:** **если БД пустая** — удали volume и пересоздай:
+
+```bash
 docker compose down -v
 docker compose --env-file .env.docker up -d
-⚠️ Внимание: -v удаляет все данные БД. Придётся загружать .inpx заново.
+```
 
-Если данные важны — узнай пароль из volume:
+⚠️ **Внимание:** `-v` удаляет **все данные БД**. Придётся **загружать `.inpx` заново**.
 
-bash
+**Если данные важны** — узнай пароль из volume:
+
+```bash
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c "\du"
-database "flibusta" does not exist
-Причина: volume БД не инициализирован.
+```
 
-Решение:
+### `database "flibusta" does not exist`
 
-bash
+**Причина:** volume БД не инициализирован.
+
+**Решение:**
+
+```bash
 docker compose down -v
 docker compose --env-file .env.docker up -d
 sleep 30
 docker compose logs postgres | grep "database system is ready"
-flibusta_test не создаётся для тестов
-Решение:
+```
 
-bash
+### `flibusta_test` не создаётся для тестов
+
+**Решение:**
+
+```bash
 docker exec -it flibusta_postgres psql -U flibusta -d postgres -c "CREATE DATABASE flibusta_test;"
 python -m scripts.init_test_db
-Tor / Telegram-бот
-Бот не отвечает на /start
-Шаги диагностики:
+```
 
-1. Проверь, что бот запущен:
+---
 
-bash
+## Tor / Telegram-бот
+
+### Бот не отвечает на `/start`
+
+**Шаги диагностики:**
+
+**1. Проверь, что бот запущен:**
+
+```bash
 docker compose logs app | grep "Bot started"
-Ожидаем:
+```
 
-text
+**Ожидаем:**
+
+```
 Bot started: @flibusta_fb2_bot (id=8724273214)
-Если нет — бот не подключился к Telegram. См. ниже.
+```
 
-2. Проверь Tor:
+**Если нет** — бот **не подключился** к Telegram. См. ниже.
 
-bash
+**2. Проверь Tor:**
+
+```bash
 docker compose logs tor | grep "Bootstrapped 100%"
-Ожидаем: Bootstrapped 100% (done): Done.
+```
 
-Если нет — Tor не подключился. См. следующий пункт.
+**Ожидаем:** `Bootstrapped 100% (done): Done`.
 
-3. Проверь связь app → tor:
+**Если нет** — Tor **не подключился**. См. следующий пункт.
 
-bash
+**3. Проверь связь `app` → `tor`:**
+
+```bash
 docker compose exec app python -c "
 import socket
 s = socket.socket(); s.settimeout(5)
 s.connect(('tor', 9050)); print('OK: tor:9050 доступен')
 "
-Ожидаем: OK: tor:9050 доступен.
+```
 
-Tor не подключается (Bootstrapped 0–99%)
-Симптомы в логах tor:
+**Ожидаем:** `OK: tor:9050 доступен`.
 
-text
+### Tor не подключается (Bootstrapped 0–99%)
+
+**Симптомы в логах `tor`:**
+
+```
 [warn] Proxy Client: unable to connect OR connection ... ("general SOCKS server failure")
 [notice] Failed to find node for hop #1 of our path.
-Причина: мосты заблокированы провайдером или устарели.
+```
 
-Решение:
+**Причина:** мосты **заблокированы** провайдером или **устарели**.
 
-1. Возьми свежие мосты:
+**Решение:**
 
-Открой @GetBridgesBot в Telegram
+**1. Возьми свежие мосты:**
 
-Отправь /webtunnel (WebTunnel лучше всего работает в РФ)
+- Открой [@GetBridgesBot](https://t.me/GetBridgesBot) в Telegram
+- Отправь `/webtunnel` (WebTunnel **лучше всего работает в РФ**)
+- Получи 3–5 мостов
 
-Получи 3–5 мостов
+**2. Обнови `docker/torrc`:**
 
-2. Обнови docker/torrc:
-
-text
+```
 SocksPort 0.0.0.0:9050
 ControlPort 0.0.0.0:9051
 
@@ -196,263 +247,373 @@ ClientTransportPlugin webtunnel exec /usr/bin/lyrebird
 Bridge webtunnel <НОВЫЙ_МОСТ_1> ...
 Bridge webtunnel <НОВЫЙ_МОСТ_2> ...
 Bridge webtunnel <НОВЫЙ_МОСТ_3> ...
-3. Перезапусти Tor:
+```
 
-bash
+**3. Перезапусти Tor:**
+
+```bash
 docker compose restart tor
 sleep 40
 docker compose logs tor --tail=20
-Couldn't connect to proxy 127.0.0.1:9050
-Симптомы:
+```
 
-text
+### `Couldn't connect to proxy 127.0.0.1:9050`
+
+**Симптомы:**
+
+```
 aiohttp_socks._errors.ProxyConnectionError: [Errno 111] Couldn't connect to proxy 127.0.0.1:9050
-Причина: в коде или .env захардкожен 127.0.0.1:9050 вместо tor:9050.
+```
 
-Решение:
+**Причина:** в коде или `.env` **захардкожен** `127.0.0.1:9050` вместо `tor:9050`.
 
-1. Проверь config.py:
+**Решение:**
 
-python
+**1. Проверь `config.py`:**
+
+```python
 telegram_proxy: str = "socks5://tor:9050"   # ← правильный дефолт
-2. Проверь app/bot/main.py:
+```
 
-python
+**2. Проверь `app/bot/main.py`:**
+
+```python
 session = AiohttpSession(proxy=settings.telegram_proxy)   # ← читаем из настроек
-3. Проверь .env.docker:
+```
 
-env
+**3. Проверь `.env.docker`:**
+
+```env
 TELEGRAM_PROXY=socks5://tor:9050
-4. Проверь, что реально попадает в контейнер:
+```
 
-bash
+**4. Проверь, что реально попадает в контейнер:**
+
+```bash
 docker compose exec app env | grep TELEGRAM_PROXY
 # Ожидаем: TELEGRAM_PROXY=socks5://tor:9050
-5. Пересоздай контейнер:
+```
 
-bash
+**5. Пересоздай контейнер:**
+
+```bash
 docker compose --env-file .env.docker up -d --force-recreate app
-ModuleNotFoundError: No module named 'aiohttp_socks'
-Причина: пакет не установлен.
+```
 
-Решение:
+### `ModuleNotFoundError: No module named 'aiohttp_socks'`
 
-bash
+**Причина:** пакет не установлен.
+
+**Решение:**
+
+```bash
 docker compose exec app pip install aiohttp-socks
-Или пересобери образ:
+```
 
-bash
+**Или** пересобери образ:
+
+```bash
 docker compose --env-file .env.docker build app
 docker compose --env-file .env.docker up -d --force-recreate app
-Conflict: terminated by other getUpdates
-Причина: два экземпляра бота слушают Telegram. Например, локальный uvicorn + Docker.
+```
 
-Решение:
+### `Conflict: terminated by other getUpdates`
 
-1. Останови локальный uvicorn:
+**Причина:** **два экземпляра** бота слушают Telegram. Например, локальный `uvicorn` + Docker.
 
-bash
+**Решение:**
+
+**1. Останови локальный `uvicorn`:**
+
+```bash
 # Ctrl+C в терминале с uvicorn
-2. Проверь, что только один app:
+```
 
-bash
+**2. Проверь, что только один `app`:**
+
+```bash
 docker ps | grep flibusta_app
-3. Перезапусти:
+```
 
-bash
+**3. Перезапусти:**
+
+```bash
 docker compose restart app
-Веб-интерфейс
-http://localhost:8000 не открывается
-1. Проверь, что контейнер app работает:
+```
 
-bash
+---
+
+## Веб-интерфейс
+
+### http://localhost:8000 не открывается
+
+**1. Проверь, что контейнер `app` работает:**
+
+```bash
 docker compose ps
 # flibusta_app ... Up (healthy)
-2. Проверь логи:
+```
 
-bash
+**2. Проверь логи:**
+
+```bash
 docker compose logs app --tail=30
-3. Проверь, что порт проброшен:
+```
 
-bash
+**3. Проверь, что порт проброшен:**
+
+```bash
 docker compose ps | grep 8000
 # 0.0.0.0:8000->8000/tcp
-4. Проверь, что uvicorn слушает:
+```
 
-bash
+**4. Проверь, что uvicorn слушает:**
+
+```bash
 docker compose exec app curl -s http://localhost:8000/health
 # {"status":"ok"}
-500 Internal Server Error
-Симптомы: в браузере — ошибка 500. В логах app:
+```
 
-text
+### 500 Internal Server Error
+
+**Симптомы:** в браузере — ошибка **500**. В логах `app`:
+
+```
 sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called
-или
+```
 
-text
+**или**
+
+```
 RuntimeError: Task ... attached to a different loop
-Причина: lazy loading async-объектов без selectinload.
+```
 
-Решение: в роутах всегда используй:
+**Причина:** `lazy loading` async-объектов без `selectinload`.
 
-python
+**Решение:** в роутах **всегда** используй:
+
+```python
 stmt = select(Book).options(selectinload(Book.authors_rel))
-Проверь все места:
+```
 
-bash
+**Проверь все места:**
+
+```bash
 grep -rn "authors_rel" app/
-Пустая страница / стили не загружаются
-Причина: кэш браузера.
+```
 
-Решение:
+### Пустая страница / стили не загружаются
 
-Ctrl+Shift+R (hard reload)
+**Причина:** кэш браузера.
 
-Или открой http://localhost:8000/static/style.css — если 404, проблема в mount
+**Решение:**
 
-«Ничего не найдено» при поиске
-1. Проверь, что книги загружены:
+- **Ctrl+Shift+R** (hard reload)
+- Или открой **http://localhost:8000/static/style.css** — если 404, проблема в mount
 
-bash
+### «Ничего не найдено» при поиске
+
+**1. Проверь, что книги загружены:**
+
+```bash
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c "SELECT COUNT(*) FROM books;"
 # Ожидаем: 699504
-2. Если 0 — загрузи .inpx:
+```
 
-bash
+**2. Если 0** — загрузи `.inpx`:
+
+```bash
 docker compose exec app python -m scripts.load_books \
     --torrent-id 1 --inpx /data/flibusta_fb2_local.inpx
-3. Проверь FTS:
+```
 
-bash
+**3. Проверь FTS:**
+
+```bash
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c \
     "SELECT COUNT(*) FROM books WHERE to_tsvector('russian', title) @@ plainto_tsquery('russian', 'матриархат');"
-Скачивание книг
-file not found при скачивании
-Причина: в БД save_path не совпадает с фактическим путём в контейнере.
+```
 
-Решение:
+---
 
-bash
+## Скачивание книг
+
+### `file not found` при скачивании
+
+**Причина:** в БД `save_path` не совпадает с фактическим путём в контейнере.
+
+**Решение:**
+
+```bash
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c \
     "UPDATE torrents SET save_path = '/data' WHERE id = 1;"
 docker compose restart app
-Скачивание «висит» на 0%
-Симптомы в логах app:
+```
 
-text
+### Скачивание «висит» на 0%
+
+**Симптомы в логах `app`:**
+
+```
 [5s] pieces: 0/1 · peers: 0/0 · rate: 0 KiB/s
 [30s] pieces: 0/1 · peers: 0/0 · rate: 0 KiB/s
-Причина: нет пиров для нужного piece-а. Torrent не может найти данные.
+```
 
-Решение:
+**Причина:** **нет пиров** для нужного piece-а. Torrent **не может найти данные**.
 
-1. Убедись, что торрент активен в µTorrent/qBittorrent на хосте. Если активен — он может «забирать» пиров у нашего libtorrent.
+**Решение:**
 
-2. Проверь статус торрента:
+**1. Убедись, что торрент активен** в µTorrent/qBittorrent на хосте. Если активен — **он может «забирать» пиров** у нашего libtorrent.
 
-bash
+**2. Проверь статус торрента:**
+
+```bash
 docker compose logs app | grep "peers"
-3. Если пиров нет долго — подожди 1–2 минуты (DHT ищет).
+```
 
-4. Если у тебя есть локальный µTorrent — временно останови его на время скачивания.
+**3. Если пиров нет долго** — подожди 1–2 минуты (DHT ищет).
 
-5. Если совсем плохо — добавь публичные трекеры в torrent_session.py:
+**4. Если у тебя есть локальный µTorrent** — временно **останови его** на время скачивания.
 
-python
+**5. Если совсем плохо** — **добавь публичные трекеры** в `torrent_session.py`:
+
+```python
 public_trackers = [
     "udp://tracker.opentrackr.org:1337/announce",
     "udp://tracker.torrent.eu.org:451/announce",
 ]
 params.trackers = list(params.trackers) + public_trackers
-read_piece error: Operation not permitted
-Причина: read_piece вызван до того, как piece полностью скачан.
+```
 
-Решение: проверяй handle.have_piece(piece_index) до read_piece.
+### `read_piece error: Operation not permitted`
 
-Уже сделано в torrent_session.py:
+**Причина:** `read_piece` вызван **до** того, как piece **полностью скачан**.
 
-python
+**Решение:** проверяй `handle.have_piece(piece_index)` **до** `read_piece`.
+
+**Уже сделано** в `torrent_session.py`:
+
+```python
 if not handle.have_piece(piece_index):
     raise RuntimeError(f"Piece {piece_index} not available")
-Файл скачался, но не открывается
-Причина: повреждён ZIP или неверный offset.
+```
 
-Решение: проверь логи:
+### Файл скачался, но **не открывается**
 
-bash
+**Причина:** повреждён ZIP или неверный offset.
+
+**Решение:** проверь логи:
+
+```bash
 docker compose logs app | grep "CRC32"
-Если CRC32 mismatch — offset в archive_entries неверный. Переиндексируй:
+```
 
-bash
+**Если `CRC32 mismatch`** — offset в `archive_entries` неверный. Переиндексируй:
+
+```bash
 docker compose exec app python -m scripts.index_archives --torrent-id 1 --force
-Batch-загрузка
-Batch job not found
-Причина: job удалён или устарел.
+```
 
-Решение: создай новый batch через веб-интерфейс (добавь книги в корзину и нажми «Скачать ZIP»).
+---
 
-ZIP-архив не скачивается
-1. Проверь статус job:
+## Batch-загрузка
 
-bash
+### `Batch job not found`
+
+**Причина:** job удалён или устарел.
+
+**Решение:** создай новый batch через веб-интерфейс (добавь книги в корзину и нажми «Скачать ZIP»).
+
+### ZIP-архив не скачивается
+
+**1. Проверь статус job:**
+
+```bash
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c \
     "SELECT id, status, done_books, total_books FROM batch_jobs ORDER BY created_at DESC LIMIT 5;"
-Ожидаем: status = 'ready'.
+```
 
-2. Проверь, что файл существует:
+**Ожидаем:** `status = 'ready'`.
 
-bash
+**2. Проверь, что файл существует:**
+
+```bash
 docker compose exec app ls -la /app/tmp_downloads/ | grep Flibusta
-3. Если status = 'error' — смотри логи:
+```
 
-bash
+**3. Если `status = 'error'`** — смотри логи:
+
+```bash
 docker compose logs app | grep "Batch"
-ZIP превышает 50 МБ, часть книг не попала
-Это by design. Лимит 50 МБ на один batch.
+```
 
-Решение: раздели на два batch по 10 книг.
+### ZIP превышает 50 МБ, часть книг не попала
 
-Производительность
-Поиск медленный (>1 сек)
-Проверь индексы:
+**Это by design.** Лимит **50 МБ** на один batch.
 
-bash
+**Решение:** раздели на **два batch** по 10 книг.
+
+---
+
+## Производительность
+
+### Поиск медленный (>1 сек)
+
+**Проверь индексы:**
+
+```bash
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c \
     "SELECT indexname FROM pg_indexes WHERE tablename='books' ORDER BY indexname;"
-Ожидаем 14 индексов, включая ix_books_title_fts, ix_books_authors_text_trgm, ix_books_genres_gin.
+```
 
-Если индексов нет — создай вручную:
+**Ожидаем 14 индексов**, включая `ix_books_title_fts`, `ix_books_authors_text_trgm`, `ix_books_genres_gin`.
 
-sql
+**Если индексов нет** — создай вручную:
+
+```sql
 CREATE INDEX ix_books_title_fts ON books USING GIN (to_tsvector('russian', title));
 CREATE INDEX ix_books_authors_text_trgm ON books USING GIN (authors_text gin_trgm_ops);
-tmp_downloads растёт до гигабайт
-Причина: LRU-кэш не срабатывает (лимит 20 ГБ).
+```
 
-Проверь TEMP_DOWNLOAD_MAX_GB:
+### `tmp_downloads` растёт до гигабайт
 
-bash
+**Причина:** LRU-кэш **не срабатывает** (лимит 20 ГБ).
+
+**Проверь `TEMP_DOWNLOAD_MAX_GB`:**
+
+```bash
 docker compose exec app env | grep TEMP_DOWNLOAD_MAX_GB
 # Ожидаем: 20
-Ручная очистка:
+```
 
-bash
+**Ручная очистка:**
+
+```bash
 docker compose exec app python -c "
 from app.services.temp_cleaner import enforce_cache_limit, cleanup_old_fb2
 enforce_cache_limit(20)
 cleanup_old_fb2(10)
 "
-libtorrent жрёт CPU
-Причина: DHT-запросы, поиск пиров.
+```
 
-Решение: в torrent_session.py:
+### `libtorrent` жрёт CPU
 
-python
+**Причина:** DHT-запросы, поиск пиров.
+
+**Решение:** в `torrent_session.py`:
+
+```python
 "dht_bootstrap_nodes": "",
 "enable_dht": False,   # ← отключить DHT (если не нужен)
-Полезные команды
-Логи
-bash
+```
+
+---
+
+## Полезные команды
+
+### Логи
+
+```bash
 # Все сервисы
 docker compose logs -f
 
@@ -464,8 +625,11 @@ docker compose logs --tail=50 app
 
 # С фильтром
 docker compose logs app | grep ERROR
-Bash внутрь контейнера
-bash
+```
+
+### Bash внутрь контейнера
+
+```bash
 # В app
 docker compose exec app bash
 
@@ -474,8 +638,11 @@ docker compose exec postgres psql -U flibusta -d flibusta
 
 # В tor
 docker compose exec tor sh
-Перезапуск
-bash
+```
+
+### Перезапуск
+
+```bash
 # Перезапустить app
 docker compose restart app
 
@@ -485,8 +652,11 @@ docker compose --env-file .env.docker up -d --force-recreate app
 # Полный рестарт
 docker compose --env-file .env.docker down
 docker compose --env-file .env.docker up -d
-Очистка
-bash
+```
+
+### Очистка
+
+```bash
 # Только контейнеры (сохранить БД)
 docker compose down
 
@@ -495,8 +665,11 @@ docker compose down -v
 
 # Удалить все неиспользуемые образы
 docker image prune -a
-Проверка БД
-bash
+```
+
+### Проверка БД
+
+```bash
 # Количество книг
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c \
     "SELECT COUNT(*) FROM books;"
@@ -508,8 +681,11 @@ docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c \
 # Размер БД
 docker exec -it flibusta_postgres psql -U flibusta -d flibusta -c \
     "SELECT pg_size_pretty(pg_database_size('flibusta'));"
-Тесты
-bash
+```
+
+### Тесты
+
+```bash
 # Все тесты
 pytest tests/ -v
 
@@ -518,30 +694,38 @@ pytest tests/test_search.py -v
 
 # С покрытием
 pytest tests/ --cov=app --cov-report=html
-Что-то ещё?
-Если проблема не описана здесь:
+```
 
-Собери логи:
+---
 
-bash
+## Что-то ещё?
+
+Если проблема **не описана** здесь:
+
+1. **Собери логи:**
+
+```bash
 docker compose logs > debug.log
-Проверь, что версии актуальны:
+```
 
-bash
+2. **Проверь, что версии актуальны:**
+
+```bash
 docker --version
 docker compose version
 docker images | grep flibusta
-Ищи в issues репозитория (если публичный).
+```
 
-Проверь ARCHITECTURE.md и SETUP.md — возможно, ответ там.
+3. **Ищи в issues** репозитория (если публичный).
 
-См. также
-SETUP.md — установка
+4. **Проверь** [ARCHITECTURE.md](ARCHITECTURE.md) и [SETUP.md](SETUP.md) — возможно, ответ там.
 
-ARCHITECTURE.md — как устроено
+---
 
-API.md — HTTP-эндпоинты
+## См. также
 
-BOT.md — Telegram-бот
-
-UPDATE.md — обновление
+- **[SETUP.md](SETUP.md)** — установка
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — как устроено
+- **[API.md](API.md)** — HTTP-эндпоинты
+- **[BOT.md](BOT.md)** — Telegram-бот
+- **[UPDATE.md](UPDATE.md)** — обновление

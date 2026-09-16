@@ -1,7 +1,20 @@
+"""Настройка логирования.
+
+Убирает шум от healthcheck'ов и других частых запросов.
+"""
+
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+
+class HealthCheckFilter(logging.Filter):
+    """Скрывает access-логи для /health."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        return "/health" not in message
 
 
 def setup_logging(debug: bool = False) -> None:
@@ -33,3 +46,6 @@ def setup_logging(debug: bool = False) -> None:
     # Приглушаем болтливые логи
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
     logging.getLogger("aiogram.event").setLevel(logging.WARNING)
+
+    # Убираем /health из access-логов uvicorn
+    logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())

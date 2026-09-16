@@ -15,6 +15,7 @@
 ---
 
 ## Общая схема
+
 ```mermaid
 flowchart TB
     User[👤 Пользователь]
@@ -61,6 +62,7 @@ flowchart TB
     style App fill:#fff
     style Postgres fill:#dbeafe
     style Tor fill:#fce7f3
+
 ```
 
 ---
@@ -106,6 +108,7 @@ flowchart TB
 ## Схема БД
 
 ### ER-диаграмма
+
 ```mermaid
 erDiagram
     torrents ||--o{ torrent_files : "1:N"
@@ -202,6 +205,7 @@ erDiagram
         bigint file_size
         bool cancelled
     }
+
 ```
 
 
@@ -314,6 +318,7 @@ erDiagram
 ## Потоки данных
 
 ### 1. Поиск книги
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -378,7 +383,8 @@ sequenceDiagram
 
 
 
-### 3. Batch-загрузка
+### 3. Batch-загрузка,
+
 ```mermaid
 sequenceDiagram
     autonumber
