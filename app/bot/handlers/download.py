@@ -36,6 +36,12 @@ _active_lock = asyncio.Lock()
 # Сколько секунд считать задачу «активной» (максимум)
 ACTIVE_TIMEOUT = 300  # 5 минут
 
+# ============================================================
+# Трекер недавних скачиваний (защита от повторов)
+# ============================================================
+_recent_downloads: dict[tuple[int, int], float] = {}
+RECENT_TIMEOUT = 30  # 30 секунд
+
 
 async def _is_download_active(user_id: int, lib_id: int) -> bool:
     """Проверить, идёт ли уже скачивание этой книги этим пользователем."""
@@ -77,17 +83,22 @@ async def cb_download(callback: CallbackQuery) -> None:
 
     user_id = callback.from_user.id
 
-    # === ЗАЩИТА ОТ ДУБЛЕЙ ===
+    # === ПРОВЕРКА 1: активная задача ===
     if await _is_download_active(user_id, lib_id):
         await callback.answer(
             "⏳ Книга уже скачивается. Подождите…",
             show_alert=False,
         )
-        logger.info(
-            "Duplicate download request: user_id=%d lib_id=%d",
-            user_id,
-            lib_id,
+        logger.info("Duplicate download request: user_id=%d lib_id=%d", user_id, lib_id)
+        return
+
+    # === ПРОВЕРКА 2: недавно скачивал ===
+    if await _is_recently_downloaded(user_id, lib_id):
+        await callback.answer(
+            "✅ Книга уже отправлена выше ↑",
+            show_alert=False,
         )
+        logger.info("Recently downloaded: user_id=%d lib_id=%d", user_id, lib_id)
         return
 
     await _mark_download_started(user_id, lib_id)
@@ -162,6 +173,7 @@ async def cb_download(callback: CallbackQuery) -> None:
     finally:
         # === СНИМАЕМ БЛОКИРОВКУ ВСЕГДА ===
         await _mark_download_finished(user_id, lib_id)
+        await _mark_recently_downloaded(user_id, lib_id)
 
 
 async def _progress_updater(msg: Message, lib_id: int) -> None:
@@ -204,3 +216,21 @@ async def _safe_edit(msg: Message, text: str) -> None:
         await msg.edit_text(text, parse_mode="HTML")
     except Exception:  # noqa: BLE001
         pass
+
+
+async def _is_recently_downloaded(user_id: int, lib_id: int) -> bool:
+    """Проверить, скачивал ли пользователь эту книгу недавно."""
+    async with _active_lock:
+        key = (user_id, lib_id)
+        last = _recent_downloads.get(key)
+        if last is None:
+            return False
+        if time.monotonic() - last > RECENT_TIMEOUT:
+            _recent_downloads.pop(key, None)
+            return False
+        return True
+
+
+async def _mark_recently_downloaded(user_id: int, lib_id: int) -> None:
+    async with _active_lock:
+        _recent_downloads[(user_id, lib_id)] = time.monotonic()
