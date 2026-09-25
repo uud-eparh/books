@@ -40,7 +40,7 @@
 ### 1. Клонирование
 
 ```bash
-git clone <your-repo-url> book-hub
+git clone https://github.com/uud-eparh/books book-hub
 cd book-hub
 ```
 
