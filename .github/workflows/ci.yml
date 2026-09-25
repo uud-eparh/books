@@ -60,6 +60,9 @@ jobs:
           POSTGRES_USER: flibusta
           POSTGRES_PASSWORD: flibusta_secret
           POSTGRES_DB: flibusta_test
+          TEMP_DOWNLOAD_PATH: ./tmp_downloads
+          INPX_PATH: ./flibusta_fb2_local.inpx
+          TORRENT_DATA_PATH: ./data 
         run: |
           python -m scripts.init_test_db
           pytest tests/ -v
