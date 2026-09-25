@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 PIECE_LENGTH = 16 * 1024 * 1024  # 16 MiB
 
 

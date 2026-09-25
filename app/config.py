@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_allowed_users: str = ""
     telegram_proxy: str = "socks5://127.0.0.1:9050"
-    telegram_admin_id: int = 0 
+    telegram_admin_id: int = 0
 
     # Paths
     inpx_path: Path = Path("/data/flibusta_fb2_local.inpx")
@@ -70,7 +70,7 @@ class Settings(BaseSettings):
             for uid in self.telegram_allowed_users.split(",")
             if uid.strip().isdigit()
         ]
-    
+
     @property
     def admin_id(self) -> int | None:
         """ID админа для /message. None, если не задан."""

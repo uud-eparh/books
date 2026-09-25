@@ -1,5 +1,5 @@
-from contextlib import asynccontextmanager
 import asyncio
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
         try:
             bot, dp = create_bot_and_dispatcher()
             bot_task = asyncio.create_task(start_polling_async(bot, dp))
-            print(f"🤖 Telegram bot started")
+            print("🤖 Telegram bot started")
         except Exception as exc:
             print(f"⚠️  Telegram bot failed to start: {exc!r}")
     else:

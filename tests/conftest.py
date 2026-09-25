@@ -30,8 +30,8 @@ if sys.platform == "win32":
 os.environ.setdefault("POSTGRES_DB", "flibusta_test")
 os.environ.setdefault("POSTGRES_HOST", "localhost")
 
-from app.db.base import Base  # noqa: E402
 from app.db import models  # noqa: E402, F401
+from app.db.base import Base  # noqa: E402
 
 TEST_DB_URL = (
     f"postgresql+asyncpg://{os.environ.get('POSTGRES_USER', 'flibusta')}:"

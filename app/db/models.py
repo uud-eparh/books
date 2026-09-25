@@ -8,7 +8,9 @@
 """
 
 from __future__ import annotations
+
 from datetime import date, datetime
+
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -25,6 +27,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.db.base import Base
 
 
@@ -171,7 +174,7 @@ class Book(Base):
     authors_rel: Mapped[list[Author]] = relationship(
         secondary="book_authors",
         back_populates="books",
-    )    
+    )
 
     def __repr__(self) -> str:
         return f"<Book lib_id={self.lib_id} title={self.title[:40]!r}>"

@@ -9,12 +9,10 @@ import logging
 
 from aiogram import F, Router
 from aiogram.types import Message
-from sqlalchemy import select
 
 from app.bot.formatters import format_search_header
 from app.bot.keyboards import books_list_keyboard
 from app.db.base import async_session_maker
-from app.db.models import Book
 from app.services.search import SearchField, search_books
 
 logger = logging.getLogger(__name__)

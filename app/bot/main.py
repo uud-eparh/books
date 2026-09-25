@@ -6,19 +6,17 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from app.bot.handlers import register_handlers
 from app.bot.middlewares import LoggingMiddleware, WhitelistMiddleware
 from app.config import settings
-
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.fsm.storage.memory import MemoryStorage
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +62,7 @@ async def start_polling_async(bot: Bot, dp: Dispatcher) -> None:
     try:
         me = await bot.get_me()
         logger.info("Bot started: @%s (id=%s)", me.username, me.id)
-    except Exception as exc:
+    except Exception:
         logger.exception("get_me failed")
         raise
 

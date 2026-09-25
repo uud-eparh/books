@@ -2,36 +2,45 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import re
-import asyncio
 import time
 from pathlib import Path
 from urllib.parse import quote
-import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
-from typing import Any
 from fastapi.responses import (
+    FileResponse,
     HTMLResponse,
     RedirectResponse,
     Response,
-    StreamingResponse,   # ← добавить
+    StreamingResponse,  # ← добавить
 )
-
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select                        
+from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload             
+from sqlalchemy.orm import selectinload
 
+from app.db.base import async_session_maker
 from app.db.models import Book
 from app.services.authors import get_author, search_authors
+from app.services.batch import (
+    BatchError,
+    cancel_job,
+    create_job,
+    get_job,
+)
+from app.services.filenames import make_batch_filename
 from app.services.library import (
-    BookContentError,
-    BookNotFoundError,
     fetch_book_content,
+    is_book_local_available,
+)
+from app.services.progress import (
+    DownloadStatus,
+    get_progress_tracker,
 )
 from app.services.search import (
     SearchField,
@@ -41,22 +50,6 @@ from app.services.search import (
 )
 from app.web.deps import Pagination, get_db
 from app.web.template_filters import normalize_authors, register_filters
-from app.services.library import is_book_local_available
-
-from app.services.progress import (
-    DownloadStatus,
-    get_progress_tracker,
-)
-from app.db.base import async_session_maker
-
-from app.services.batch import (
-    BatchError,
-    cancel_job,
-    create_job,
-    get_job,
-)
-from app.services.filenames import make_batch_filename
-
 
 logger = logging.getLogger(__name__)
 
@@ -161,8 +154,6 @@ async def book_download(
     lib_id: int,
     session: AsyncSession = Depends(get_db),
 ) -> Response:
-    from fastapi.responses import RedirectResponse
-    from app.services.library import is_book_local_available
 
     # Проверяем: если локальный ZIP есть — сразу отдаём
     try:
@@ -191,7 +182,6 @@ async def random_redirect(
     session: AsyncSession = Depends(get_db),
 ) -> Response:
     """Редирект на случайную книгу."""
-    from fastapi.responses import RedirectResponse
 
     book = await get_random_book(session, torrent_id=None)
     if book is None:
@@ -254,7 +244,7 @@ async def api_batch_create(
     try:
         job = await create_job(session, payload.lib_ids)
     except BatchError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return {
         "job_id": job.id,
@@ -284,7 +274,7 @@ async def api_batch_cancel(
     try:
         job = await cancel_job(session, job_id)
     except BatchError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return job.to_dict()
 
 

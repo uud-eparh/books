@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from pathlib import Path
 
 # Таблица транслитерации (простая, без библиотек)
 _RU_EN_TABLE: dict[str, str] = {

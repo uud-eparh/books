@@ -5,12 +5,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from dataclasses import dataclass, field
 
 from aiogram import F, Router
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
-from app.bot.formatters import esc, normalize_authors, format_size
+from app.bot.formatters import esc, format_size, normalize_authors
 from app.db.base import async_session_maker
 from app.services.filenames import make_book_filename
 from app.services.library import (

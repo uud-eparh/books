@@ -8,7 +8,7 @@ from __future__ import annotations
 import html
 import logging
 
-from aiogram import F, Router
+from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
@@ -84,7 +84,7 @@ async def cmd_message(message: Message) -> None:
             text=admin_text,
             parse_mode="HTML",
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception:  # noqa: BLE001
         logger.exception("Не удалось отправить сообщение админу %d", admin_id)
         await message.answer(
             "❌ Не удалось отправить сообщение. Попробуйте позже."

@@ -9,7 +9,6 @@ import pytest
 
 from app.services.zip_reader import (
     ZipReadError,
-    parse_local_header,
     read_zip_entry,
 )
 

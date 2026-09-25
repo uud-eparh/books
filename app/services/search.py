@@ -25,13 +25,13 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import and_, case, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db.models import Author, Book, BookAuthor
-from sqlalchemy.orm import selectinload
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ MAX_PAGE_SIZE = 200
 _TOKEN_SPLIT_RE = re.compile(r"[\s,;|/\\()\[\]{}]+", re.UNICODE)
 
 
-class SearchField(str, Enum):
+class SearchField(StrEnum):
     ALL = "all"
     TITLE = "title"
     AUTHOR = "author"

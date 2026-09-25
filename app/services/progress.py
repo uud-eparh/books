@@ -15,13 +15,13 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class DownloadStatus(str, Enum):
+class DownloadStatus(StrEnum):
     PENDING = "pending"           # в очереди
     DOWNLOADING = "downloading"   # активно качается
     DONE = "done"                 # готово

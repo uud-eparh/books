@@ -18,8 +18,6 @@ from pathlib import Path
 
 import libtorrent as lt
 
-from app.config import settings
-
 logger = logging.getLogger(__name__)
 
 # Сколько ждать метаданные при добавлении торрента (если ещё не загружены)
@@ -153,7 +151,7 @@ class TorrentSession:
                 "udp://tracker.moeking.me:6969/announce",
             ]
             params.trackers = list(params.trackers) + public_trackers
-            params.tracker_tiers = list(params.tracker_tiers) + [1] * len(public_trackers)                
+            params.tracker_tiers = list(params.tracker_tiers) + [1] * len(public_trackers)
 
             params.save_path = str(self.save_path)
             params.storage_mode = lt.storage_mode_t.storage_mode_sparse
@@ -222,7 +220,7 @@ class TorrentSession:
             raise RuntimeError(f"Torrent id={torrent_id} not in session")
 
         handle = state.handle
-        ti = handle.torrent_file()
+        handle.torrent_file()
 
         first_piece = abs_start // piece_length
         last_piece = (abs_end - 1) // piece_length
@@ -253,7 +251,7 @@ class TorrentSession:
 
         # Ждём завершения
         t0 = time.monotonic()
-        total_bytes = abs_end - abs_start
+        abs_end - abs_start
         last_report = 0.0
         last_piece_report = 0.0
         start_downloaded = handle.status().total_done
@@ -295,17 +293,16 @@ class TorrentSession:
                     bytes_since_start = status.total_done - start_downloaded
                     rate_kib = status.download_rate / 1024 if status.download_rate else 0
                     have_count = sum(1 for p in needed if handle.have_piece(p))
-                    
+
                     # Дополнительно: сколько пиров имеют этот piece
                     # (не у всех API это доступно, но попробуем)
-                    peers_having = 0
                     try:
                         # availability доступно через status или piece_info
                         # в некоторых версиях libtorrent
                         pass
                     except Exception:
                         pass
-                    
+
                     logger.info(
                         "  [%.0fs] pieces: %d/%d · peers: %d/%d · rate: %.0f KiB/s · downloaded: %d B",
                         elapsed,

@@ -6,7 +6,7 @@ from app.bot.handlers import (
     author,
     book,
     download,
-    feedback,   # ← ДОБАВИТЬ
+    feedback,  # ← ДОБАВИТЬ
     search,
     series,
     start,

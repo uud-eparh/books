@@ -7,14 +7,13 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import struct
 import time
 import zlib
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from app.db.models import ArchiveEntry, Torrent, TorrentFile
 from app.services.torrent_manager import get_torrent_manager
@@ -113,7 +112,7 @@ async def fetch_book_via_torrent(
     full_piece_data = b"".join(data_pieces)
     rel_start = abs_start - first_piece * piece_length
     rel_end = abs_end - first_piece * piece_length
-    buf = full_piece_data[rel_start:rel_end]    
+    buf = full_piece_data[rel_start:rel_end]
 
 
     # 4. Читаем нужные piece-ы в память через libtorrent
@@ -130,7 +129,8 @@ async def fetch_book_via_torrent(
 
     if not buf:
         raise TorrentFetchError(
-            f"Read 0 bytes from {local_path} at [{rel_start}..{rel_end})"
+            f"Read 0 bytes from piece {first_piece} "
+            f"at [{rel_start}..{rel_end})"
         )
 
     # 5. Распаковываем

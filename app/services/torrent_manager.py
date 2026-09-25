@@ -9,10 +9,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
 
 from app.config import settings
 from app.services.torrent_session import TorrentSession
@@ -30,10 +29,10 @@ class DownloadResult:
 
 
 # Единственный экземпляр менеджера (singleton)
-_manager: "TorrentManager | None" = None
+_manager: TorrentManager | None = None
 
 
-def get_torrent_manager() -> "TorrentManager":
+def get_torrent_manager() -> TorrentManager:
     """Получить singleton. Падает, если не инициализирован."""
     if _manager is None:
         raise RuntimeError(
@@ -78,7 +77,7 @@ class TorrentManager:
         if self._worker_task is not None:
             try:
                 await asyncio.wait_for(self._worker_task, timeout=10)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning("Worker did not stop in time, cancelling")
                 self._worker_task.cancel()
 

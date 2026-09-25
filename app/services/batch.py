@@ -16,14 +16,12 @@
 from __future__ import annotations
 
 import asyncio
-import io
 import logging
 import uuid
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -152,7 +150,7 @@ async def _run_job(job_id: str) -> None:
             job_id,
             status="error",
             error=str(exc),
-            finished_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(UTC),
         )
 
 
@@ -184,7 +182,7 @@ async def _process_job(job_id: str) -> None:
                 await _update_job(
                     job_id,
                     status="cancelled",
-                    finished_at=datetime.now(timezone.utc),
+                    finished_at=datetime.now(UTC),
                 )
                 return
 
@@ -236,7 +234,7 @@ async def _process_job(job_id: str) -> None:
         except (BookNotFoundError, BookContentError) as exc:
             logger.warning("Batch %s: lib_id=%d failed: %r", job_id, lib_id, exc)
             failed.append(lib_id)
-        except Exception as exc:  # noqa: BLE001
+        except Exception:  # noqa: BLE001
             logger.exception("Batch %s: lib_id=%d unexpected error", job_id, lib_id)
             failed.append(lib_id)
 
@@ -258,7 +256,7 @@ async def _process_job(job_id: str) -> None:
             done_books=0,
             error_count=len(failed),
             failed_lib_ids=failed,
-            finished_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(UTC),
         )
         return
 
@@ -287,7 +285,7 @@ async def _process_job(job_id: str) -> None:
         status="ready",
         file_path=str(zip_path),
         file_size=zip_size,
-        finished_at=datetime.now(timezone.utc),
+        finished_at=datetime.now(UTC),
     )
 
 

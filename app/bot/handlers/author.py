@@ -7,9 +7,7 @@ import logging
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-from sqlalchemy import select
 
-from app.bot.formatters import format_search_header
 from app.bot.keyboards import books_list_with_pagination_keyboard
 from app.bot.states import ListContext
 from app.db.base import async_session_maker

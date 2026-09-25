@@ -60,15 +60,6 @@ def strip_tags(text: str | None) -> str:
     return _TAG_RE.sub("", text)
 
 
-def register_filters(env) -> None:
-    """Регистрирует все фильтры в Jinja2-окружении."""
-    env.filters["normalize_authors"] = normalize_authors
-    env.filters["normalize_author"] = normalize_author
-    env.filters["format_size"] = format_size
-    env.filters["truncate_text"] = truncate_text
-    env.filters["strip_tags"] = strip_tags
-
-
 def author_url(author_raw: str) -> str:
     """URL для поиска по автору.
 

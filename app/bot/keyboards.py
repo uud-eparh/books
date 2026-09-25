@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-
-from app.db.models import Book
 
 from app.bot.formatters import (
     format_book_button,
     format_book_button_by_author,
     format_book_button_by_series,
 )
+from app.db.models import Book
 
 
 def books_list_keyboard(

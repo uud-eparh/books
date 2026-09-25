@@ -15,8 +15,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import ArchiveEntry, Book, Torrent, TorrentFile
-from app.services.zip_reader import ZipReadError, read_zip_entry
 from app.services.torrent_fetcher import fetch_book_via_torrent
+from app.services.zip_reader import ZipReadError, read_zip_entry
 
 logger = logging.getLogger(__name__)
 
