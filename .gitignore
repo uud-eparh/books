@@ -48,3 +48,4 @@ test_torrent.fb2
 # (docker-compose.yml обычно коммитится)
 
 build.log
+.github
