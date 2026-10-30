@@ -14,9 +14,9 @@ from sqlalchemy.orm import selectinload
 
 from app.bot.formatters import format_book_card
 from app.bot.keyboards import book_card_keyboard
+from app.bot.services.events import log_callback_event
 from app.db.base import async_session_maker
 from app.db.models import Book
-from app.bot.services.events import log_callback_event
 
 logger = logging.getLogger(__name__)
 

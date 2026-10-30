@@ -9,13 +9,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Author, Book, Torrent, TorrentFile, UserEvent
-from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +125,7 @@ async def get_bot_stats(session: AsyncSession) -> BotStats:
         select(func.count(func.distinct(UserEvent.user_id)))
     ) or 0
 
-    today_start = datetime.now(timezone.utc).replace(
+    today_start = datetime.now(UTC).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
     users_today = await session.scalar(
@@ -156,7 +155,7 @@ async def get_bot_stats(session: AsyncSession) -> BotStats:
 
 async def get_today_stats(session: AsyncSession) -> TodayStats:
     """Статистика за сегодня."""
-    today_start = datetime.now(timezone.utc).replace(
+    today_start = datetime.now(UTC).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
 
@@ -194,16 +193,16 @@ async def get_top_books(
     session: AsyncSession, limit: int = 10, days: int = 30
 ) -> list[TopBook]:
     """Топ книг по скачиваниям за N дней."""
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
 
     stmt = text("""
-        SELECT 
+        SELECT
             sub.lib_id,
             sub.title,
             sub.author,
             sub.downloads
         FROM (
-            SELECT 
+            SELECT
                 (e.payload->>'lib_id')::int AS lib_id,
                 b.title,
                 COALESCE(b.authors[1], '—') AS author,
@@ -235,14 +234,14 @@ async def get_top_authors(
     session: AsyncSession, limit: int = 10, days: int = 30
 ) -> list[TopAuthor]:
     """Топ авторов по скачиваниям книг за N дней."""
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
 
     stmt = text("""
-        SELECT 
+        SELECT
             sub.name,
             sub.downloads
         FROM (
-            SELECT 
+            SELECT
                 unnest(b.authors) AS name,
                 COUNT(*) AS downloads
             FROM user_events e
@@ -271,16 +270,16 @@ async def get_daily_activity(
     session: AsyncSession, days: int = 7
 ) -> list[DayActivity]:
     """Активность по дням за последние N дней."""
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
 
     stmt = text("""
-        SELECT 
+        SELECT
             sub.day,
             sub.searches,
             sub.downloads,
             sub.users
         FROM (
-            SELECT 
+            SELECT
                 TO_CHAR(created_at, 'YYYY-MM-DD') AS day,
                 COUNT(*) FILTER (WHERE event_type = 'search') AS searches,
                 COUNT(*) FILTER (WHERE event_type = 'download') AS downloads,

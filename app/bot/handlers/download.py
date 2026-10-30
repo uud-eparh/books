@@ -10,6 +10,7 @@ from aiogram import F, Router
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
 from app.bot.formatters import esc, format_size, normalize_authors
+from app.bot.services.events import log_callback_event
 from app.db.base import async_session_maker
 from app.services.filenames import make_book_filename
 from app.services.library import (
@@ -18,7 +19,6 @@ from app.services.library import (
     fetch_book_content,
 )
 from app.services.progress import DownloadStatus, get_progress_tracker
-from app.bot.services.events import log_callback_event
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +156,7 @@ async def cb_download(callback: CallbackQuery) -> None:
             len(content.data),
             content.elapsed_seconds,
         )
-        
+
         await log_callback_event(
             callback,
             "download",
