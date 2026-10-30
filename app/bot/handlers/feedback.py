@@ -13,6 +13,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from app.config import settings
+from app.bot.services.events import log_message_event
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,13 @@ async def cmd_message(message: Message) -> None:
         "✅ <b>Сообщение отправлено!</b>\n\n"
         "Администратор получит его в ближайшее время."
     )
-
+    
+    await log_message_event(
+        message,
+        "message",
+        {"length": len(text)},
+    )
+    
     logger.info(
         "Feedback from user_id=%d (%s) sent to admin %d: %r",
         user.id,

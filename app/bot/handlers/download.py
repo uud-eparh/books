@@ -18,6 +18,7 @@ from app.services.library import (
     fetch_book_content,
 )
 from app.services.progress import DownloadStatus, get_progress_tracker
+from app.bot.services.events import log_callback_event
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,17 @@ async def cb_download(callback: CallbackQuery) -> None:
             user_id,
             len(content.data),
             content.elapsed_seconds,
+        )
+        
+        await log_callback_event(
+            callback,
+            "download",
+            {
+                "lib_id": lib_id,
+                "source": content.source,
+                "elapsed_ms": int(content.elapsed_seconds * 1000),
+                "file_size": len(content.data),
+            },
         )
 
     except BookNotFoundError:

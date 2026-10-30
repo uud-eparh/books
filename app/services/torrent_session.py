@@ -66,7 +66,7 @@ class TorrentSession:
             "enable_lsd": True,
             "enable_upnp": False,
             "enable_natpmp": False,
-            # === НОВОЕ: ускоряем поиск пиров и piece-ов ===
+            # === ускоряем поиск пиров и piece-ов ===
             "connections_limit": 200,
             "active_downloads": 5,
             "active_seeds": 5,
@@ -148,7 +148,13 @@ class TorrentSession:
                 "udp://open.stealth.si:80/announce",
                 "udp://tracker.torrent.eu.org:451/announce",
                 "udp://exodus.desync.com:6969/announce",
+                "udp://open.demonii.com:1337/announce",
+                "udp://tracker.openbittorrent.com:6969/announce",
                 "udp://tracker.moeking.me:6969/announce",
+                "udp://explodie.org:6969/announce",
+                "udp://tracker1.bt.moack.co.kr:80/announce",
+                "udp://tracker2.dler.org:80/announce",
+                "utp://retracker.hq.ertelecom.ru/announce"
             ]
             params.trackers = list(params.trackers) + public_trackers
             params.tracker_tiers = list(params.tracker_tiers) + [1] * len(public_trackers)

@@ -16,6 +16,7 @@ from app.bot.formatters import format_book_card
 from app.bot.keyboards import book_card_keyboard
 from app.db.base import async_session_maker
 from app.db.models import Book
+from app.bot.services.events import log_callback_event
 
 logger = logging.getLogger(__name__)
 
@@ -64,4 +65,10 @@ async def cb_book_card(callback: CallbackQuery) -> None:
         text,
         reply_markup=keyboard,
         parse_mode="HTML",
+    )
+
+    await log_callback_event(
+        callback,
+        "book_view",
+        {"lib_id": book.lib_id},
     )

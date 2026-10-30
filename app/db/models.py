@@ -25,7 +25,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -380,4 +380,51 @@ class BatchJob(Base):
         return (
             f"<BatchJob id={self.id} status={self.status!r} "
             f"{self.done_books}/{self.total_books}>"
+        )
+
+class UserEvent(Base):
+    """События пользователей (для статистики).
+
+    Значимые события:
+        - start       — первый /start (или повторный — считаем)
+        - search      — поиск книги
+        - book_view   — открытие карточки книги
+        - download    — скачивание книги
+        - message     — /message админу
+
+    Payload (JSONB):
+        - search:    {"query": "Ремарк", "field": "all", "results": 42}
+        - book_view: {"lib_id": 451569}
+        - download:  {"lib_id": 451569, "source": "torrent", "elapsed_ms": 23500, "file_size": 7832081}
+        - message:   {"length": 120}
+        - start:     {}
+    """
+
+    __tablename__ = "user_events"
+    __table_args__ = (
+        Index("ix_user_events_user", "user_id"),
+        Index("ix_user_events_type", "event_type"),
+        Index("ix_user_events_created", "created_at"),
+        Index("ix_user_events_type_created", "event_type", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    username: Mapped[str | None] = mapped_column(String(64))
+    first_name: Mapped[str | None] = mapped_column(String(128))
+
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    # JSONB для гибкости — query, lib_id, elapsed_ms, etc.
+    payload: Mapped[dict | None] = mapped_column(JSONB)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<UserEvent id={self.id} type={self.event_type!r} "
+            f"user_id={self.user_id}>"
         )

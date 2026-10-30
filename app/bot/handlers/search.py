@@ -14,6 +14,7 @@ from app.bot.formatters import format_search_header
 from app.bot.keyboards import books_list_keyboard
 from app.db.base import async_session_maker
 from app.services.search import SearchField, search_books
+from app.bot.services.events import log_message_event
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,11 @@ async def handle_search(message: Message) -> None:
             f"Попробуй изменить запрос.",
             parse_mode="HTML",
         )
+        await log_message_event(
+            message,
+            "search",
+            {"query": query, "field": "all", "results": 0},
+        )
         return
 
     # Формируем заголовок и клавиатуру
@@ -72,4 +78,10 @@ async def handle_search(message: Message) -> None:
         header,
         reply_markup=keyboard,
         parse_mode="HTML",
+    )
+
+    await log_message_event(
+        message,
+        "search",
+        {"query": query, "field": "all", "results": result.total},
     )
