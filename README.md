@@ -1,13 +1,14 @@
 # Book Hub — локальная библиотека FB2 с Telegram-ботом и веб-интерфейсом
 ## 🤖 Работающий бот
 
-Проект развёрнут и доступен в Telegram: **[@flibusta_fb2_bot](https://t.me/flibusta_fb2_bot)**
-
-Попробуйте прямо сейчас — поиск, карточки книг, скачивание.
-
+[![CI](https://github.com/uud-eparh/books/actions/workflows/ci.yml/badge.svg)](https://github.com/uud-eparh/books/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
+
+Проект развёрнут и доступен в Telegram: **[@flibusta_fb2_bot](https://t.me/flibusta_fb2_bot)**
+
+Попробуйте прямо сейчас — поиск, карточки книг, скачивание.
 
 Персональная библиотека на **700 000+ книг** с точечным скачиванием через BitTorrent.
 Найдите книгу через веб или Telegram-бота, скачайте нужный `.fb2` — при этом **не нужно хранить всю библиотеку (568 ГБ) локально**.
