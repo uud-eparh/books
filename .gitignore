@@ -42,6 +42,7 @@ inpx_tmp/
 *.inpx
 books.pdf
 test_torrent.fb2
+flibusta_dump.sql
 *.fb2
 
 # --- Docker (не обязательно, но можно) ---

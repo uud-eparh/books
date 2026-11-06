@@ -8,6 +8,7 @@
 .env.docker
 .env.example
 .env.local
+flibusta_dump.sql
 
 # --- Python ---
 .venv/

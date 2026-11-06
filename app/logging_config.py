@@ -45,7 +45,7 @@ def setup_logging(debug: bool = False) -> None:
 
     # Приглушаем болтливые логи
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-    logging.getLogger("aiogram.event").setLevel(logging.WARNING)
+    # logging.getLogger("aiogram.event").setLevel(logging.WARNING)
 
     # Убираем /health из access-логов uvicorn
     logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
