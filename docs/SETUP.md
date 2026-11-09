@@ -8,11 +8,12 @@
 2. [Подготовка библиотеки](#подготовка-библиотеки)
 3. [Установка Docker](#установка-docker)
 4. [Настройка окружения](#настройка-окружения)
-5. [Запуск](#запуск)
-6. [Первичная инициализация БД](#первичная-инициализация-бд)
-7. [Проверка работы](#проверка-работы)
-8. [Обновление](#обновление)
-9. [Остановка и удаление](#остановка-и-удаление)
+5. [Опционально: прокси Cloudflare для Telegram API](#опционально-прокси-cloudflare-для-telegram-api)
+6. [Запуск](#запуск)
+7. [Первичная инициализация БД](#первичная-инициализация-бд)
+8. [Проверка работы](#проверка-работы)
+9. [Обновление](#обновление)
+10. [Остановка и удаление](#остановка-и-удаление)
 
 ---
 
@@ -158,7 +159,11 @@ POSTGRES_DB=flibusta
 # === Telegram ===
 TELEGRAM_BOT_TOKEN=<ТОКЕН>
 TELEGRAM_ALLOWED_USERS=<ТВОЙ_ID>
-TELEGRAM_PROXY=socks5://127.0.0.1:9050
+
+# === Telegram API proxy (опционально) ===
+# Включить, если api.telegram.org блокируется провайдером.
+# TELEGRAM_API_PROXY_ENABLED=true
+# TELEGRAM_API_PROXY_URL=https://your-worker.workers.dev
 
 # === Пути (Windows-стиль) ===
 INPX_PATH=D:/Users/Downloads/fb2.Flibusta.Net/flibusta_fb2_local.inpx
@@ -189,7 +194,11 @@ POSTGRES_DB=flibusta
 # === Telegram ===
 TELEGRAM_BOT_TOKEN=<ТОКЕН>
 TELEGRAM_ALLOWED_USERS=<ТВОЙ_ID>
-TELEGRAM_PROXY=socks5://tor:9050
+
+# === Telegram API proxy (опционально) ===
+# Включить, если api.telegram.org блокируется провайдером.
+# TELEGRAM_API_PROXY_ENABLED=true
+# TELEGRAM_API_PROXY_URL=https://your-worker.workers.dev
 
 # === Пути (внутри контейнера) ===
 INPX_PATH=/data/flibusta_fb2_local.inpx
@@ -214,6 +223,83 @@ LIBRARY_PATH=D:/Users/Downloads/fb2.Flibusta.Net
 2. `/start` → получишь ID (число)
 3. Вставь в `TELEGRAM_ALLOWED_USERS`
 
+## Опционально: прокси Cloudflare для Telegram API
+
+**Когда нужно:** если `api.telegram.org` недоступен напрямую (блокировка провайдером, корпоративный firewall). По умолчанию бот работает **напрямую**, и этот раздел можно пропустить.
+
+**Идея:** развернуть простой reverse-proxy на Cloudflare Worker, который пробрасывает запросы на `api.telegram.org` 1:1. Бот ходит на Worker, Worker — на Telegram. DPI видит только SNI Cloudflare.
+
+### 1. Разверни Cloudflare Worker
+
+Минимальный Worker (JavaScript, Cloudflare Workers):
+
+```js
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    const target = "https://api.telegram.org" + url.pathname + url.search;
+    return fetch(target, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+    });
+  },
+};
+```
+
+**Что важно:**
+
+- Worker должен пробрасывать **пути как есть** (`/bot<token>/<method>`).
+- **Не логировать** тела запросов и ответы.
+- URL Worker'а держать **приватным** (не публиковать без необходимости), т.к. через него идёт токен бота.
+- Проверить, что Worker доступен: `curl https://your-worker.workers.dev/bot<TOKEN>/getMe` → должен вернуть JSON с данными бота.
+
+### 2. Включи прокси в `.env` / `.env.docker`
+
+```env
+TELEGRAM_API_PROXY_ENABLED=true
+TELEGRAM_API_PROXY_URL=https://your-worker.workers.dev
+```
+
+**Требования к URL:**
+- без завершающего `/`;
+- без `/bot` в конце (aiogram сам добавит `/bot<token>/<method>`);
+- `https` (Cloudflare Workers по умолчанию `https`).
+
+### 3. Перезапусти `app`
+
+```bash
+docker compose --env-file .env.docker up -d --force-recreate app
+```
+
+### 4. Проверь логи
+
+```bash
+docker compose logs app | grep -i "Telegram API"
+```
+
+**Ожидаемо:**
+
+```text
+Using custom Telegram API base URL: https://your-worker.workers.dev
+Bot started: @your_bot_name (id=...)
+```
+
+Если видите Using default Telegram API (direct) — переменные не подхватились. 
+
+**Проверьте:**
+
+```bash
+docker compose exec app env | grep TELEGRAM_API_PROXY
+# Ожидаемо:
+# TELEGRAM_API_PROXY_ENABLED=true
+# TELEGRAM_API_PROXY_URL=https://your-worker.workers.dev
+```
+
+### 5. Если что-то не работает
+
+См. [TROUBLESHOOTING.md](TROUBLESHOOTING.md), раздел «Telegram-бот» → «CF Worker прокси не работает».
+
 ---
 
 ## Запуск
@@ -224,7 +310,7 @@ LIBRARY_PATH=D:/Users/Downloads/fb2.Flibusta.Net
 docker compose --env-file .env.docker build
 ```
 
-**Первая сборка — 5–15 минут.** Скачается Ubuntu, Python, libtorrent, Alpine.
+**Первая сборка — 5–15 минут.** Скачается Ubuntu, Python, libtorrent.
 
 ### 2. Запусти контейнеры
 
@@ -243,7 +329,6 @@ docker compose --env-file .env.docker ps
 ```
 NAME                STATUS
 flibusta_postgres   Up (healthy)
-flibusta_tor        Up
 flibusta_app        Up (healthy)
 ```
 
