@@ -11,6 +11,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
@@ -21,14 +22,31 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
+def _make_session() -> AiohttpSession:
+    """Создать HTTP-сессию для бота.
+
+    По умолчанию — прямое подключение к api.telegram.org.
+    Если включён опциональный прокси Cloudflare Worker
+    (TELEGRAM_API_PROXY_ENABLED=true и TELEGRAM_API_PROXY_URL задан) —
+    все запросы к Telegram API пойдут через указанный базовый URL.
+    """
+    if settings.telegram_api_proxy_enabled and settings.telegram_api_proxy_url:
+        logger.info(
+            "Using custom Telegram API base URL: %s",
+            settings.telegram_api_proxy_url,
+        )
+        api = TelegramAPIServer.from_base(settings.telegram_api_proxy_url)
+        return AiohttpSession(api=api)
+
+    logger.info("Using default Telegram API (direct)")
+    return AiohttpSession()
+
+
 def create_bot_and_dispatcher() -> tuple[Bot, Dispatcher]:
     if not settings.telegram_bot_token:
         raise RuntimeError("TELEGRAM_BOT_TOKEN не задан в .env")
 
-    # SOCKS5 от Tor
-    proxy_url = settings.telegram_proxy
-    logger.info("Using proxy: %s", proxy_url)
-    session = AiohttpSession(proxy=proxy_url)
+    session = _make_session()
 
     bot = Bot(
         token=settings.telegram_bot_token,
