@@ -17,15 +17,6 @@ services:
       timeout: 5s
       retries: 5
 
-  tor:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.tor
-    container_name: flibusta_tor
-    restart: unless-stopped
-    volumes:
-      - ./docker/torrc:/etc/tor/torrc:ro
-
   app:
     build:
       context: .
@@ -35,8 +26,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      tor:
-        condition: service_started
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -57,7 +46,6 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_ALLOWED_USERS: ${TELEGRAM_ALLOWED_USERS:-}
       TELEGRAM_ADMIN_ID: ${TELEGRAM_ADMIN_ID}
-      TELEGRAM_PROXY: socks5://tor:9050
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
