@@ -27,8 +27,11 @@ class Settings(BaseSettings):
     # Telegram
     telegram_bot_token: str = ""
     telegram_allowed_users: str = ""
-    telegram_proxy: str = "socks5://127.0.0.1:9050"
     telegram_admin_id: int = 0
+
+    # Telegram API proxy (опционально, через Cloudflare Worker)
+    telegram_api_proxy_enabled: bool = False
+    telegram_api_proxy_url: str = ""
 
     # Paths
     inpx_path: Path = Path("/data/flibusta_fb2_local.inpx")

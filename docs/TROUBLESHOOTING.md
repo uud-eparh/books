@@ -6,7 +6,7 @@
 
 1. [Docker не запускается](#docker-не-запускается)
 2. [PostgreSQL](#postgresql)
-3. [Tor / Telegram-бот](#tor--telegram-бот)
+3. [Telegram-бот](#telegram-бот)
 4. [Веб-интерфейс](#веб-интерфейс)
 5. [Скачивание книг](#скачивание-книг)
 6. [Batch-загрузка](#batch-загрузка)
@@ -174,7 +174,7 @@ python -m scripts.init_test_db
 
 ---
 
-## Tor / Telegram-бот
+## Telegram-бот
 
 ### Бот не отвечает на `/start`
 
@@ -189,133 +189,28 @@ docker compose logs app | grep "Bot started"
 **Ожидаем:**
 
 ```
-Bot started: @flibusta_fb2_bot (id=8724273214)
+Bot started: @flibusta_fb2_bot (id=...)
 ```
 
 **Если нет** — бот **не подключился** к Telegram. См. ниже.
 
-**2. Проверь Tor:**
+**2. Проверь `api.telegram.org` доступен из контейнера:**
 
 ```bash
-docker compose logs tor | grep "Bootstrapped 100%"
+docker compose exec app curl -sS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe"
 ```
 
-**Ожидаем:** `Bootstrapped 100% (done): Done`.
+**Ожидаем:** JSON с `"ok":true` и данными бота.
 
-**Если нет** — Tor **не подключился**. См. следующий пункт.
+**Если не работает** (timeout, connection refused, Could not resolve host) — либо блокировка провайдером, либо проблемы с DNS. В этом случае см. раздел «Опционально: прокси Cloudflare для Telegram API» в SETUP.md.
 
-**3. Проверь связь `app` → `tor`:**
+**3. Если включён `CF Worker` — проверь, что он пробрасывает запросы:**
 
 ```bash
-docker compose exec app python -c "
-import socket
-s = socket.socket(); s.settimeout(5)
-s.connect(('tor', 9050)); print('OK: tor:9050 доступен')
-"
+docker compose exec app curl -sS "${TELEGRAM_API_PROXY_URL}/bot${TELEGRAM_BOT_TOKEN}/getMe"
 ```
 
-**Ожидаем:** `OK: tor:9050 доступен`.
-
-### Tor не подключается (Bootstrapped 0–99%)
-
-**Симптомы в логах `tor`:**
-
-```
-[warn] Proxy Client: unable to connect OR connection ... ("general SOCKS server failure")
-[notice] Failed to find node for hop #1 of our path.
-```
-
-**Причина:** мосты **заблокированы** провайдером или **устарели**.
-
-**Решение:**
-
-**1. Возьми свежие мосты:**
-
-- Открой [@GetBridgesBot](https://t.me/GetBridgesBot) в Telegram
-- Отправь `/webtunnel` (WebTunnel **лучше всего работает в РФ**)
-- Получи 3–5 мостов
-
-**2. Обнови `docker/torrc`:**
-
-```
-SocksPort 0.0.0.0:9050
-ControlPort 0.0.0.0:9051
-
-UseBridges 1
-ClientTransportPlugin webtunnel exec /usr/bin/lyrebird
-
-Bridge webtunnel <НОВЫЙ_МОСТ_1> ...
-Bridge webtunnel <НОВЫЙ_МОСТ_2> ...
-Bridge webtunnel <НОВЫЙ_МОСТ_3> ...
-```
-
-**3. Перезапусти Tor:**
-
-```bash
-docker compose restart tor
-sleep 40
-docker compose logs tor --tail=20
-```
-
-### `Couldn't connect to proxy 127.0.0.1:9050`
-
-**Симптомы:**
-
-```
-aiohttp_socks._errors.ProxyConnectionError: [Errno 111] Couldn't connect to proxy 127.0.0.1:9050
-```
-
-**Причина:** в коде или `.env` **захардкожен** `127.0.0.1:9050` вместо `tor:9050`.
-
-**Решение:**
-
-**1. Проверь `config.py`:**
-
-```python
-telegram_proxy: str = "socks5://tor:9050"   # ← правильный дефолт
-```
-
-**2. Проверь `app/bot/main.py`:**
-
-```python
-session = AiohttpSession(proxy=settings.telegram_proxy)   # ← читаем из настроек
-```
-
-**3. Проверь `.env.docker`:**
-
-```env
-TELEGRAM_PROXY=socks5://tor:9050
-```
-
-**4. Проверь, что реально попадает в контейнер:**
-
-```bash
-docker compose exec app env | grep TELEGRAM_PROXY
-# Ожидаем: TELEGRAM_PROXY=socks5://tor:9050
-```
-
-**5. Пересоздай контейнер:**
-
-```bash
-docker compose --env-file .env.docker up -d --force-recreate app
-```
-
-### `ModuleNotFoundError: No module named 'aiohttp_socks'`
-
-**Причина:** пакет не установлен.
-
-**Решение:**
-
-```bash
-docker compose exec app pip install aiohttp-socks
-```
-
-**Или** пересобери образ:
-
-```bash
-docker compose --env-file .env.docker build app
-docker compose --env-file .env.docker up -d --force-recreate app
-```
+**Ожидаем:** тот же JSON с `"ok":true`.
 
 ### `Conflict: terminated by other getUpdates`
 
@@ -636,8 +531,6 @@ docker compose exec app bash
 # В postgres
 docker compose exec postgres psql -U flibusta -d flibusta
 
-# В tor
-docker compose exec tor sh
 ```
 
 ### Перезапуск
