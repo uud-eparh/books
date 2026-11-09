@@ -21,7 +21,7 @@
 
 **Платформа:** aiogram 3.31
 
-**Транспорт:** long polling через SOCKS5 (Tor)
+**Транспорт:** Long polling (прямой режим или через CF Worker)
 
 **Роль:** альтернативный интерфейс к той же библиотеке, что и веб.
 
@@ -529,24 +529,20 @@ async def lifespan(app: FastAPI):
         await shutdown_torrent_manager()
 ```
 
-### Long polling через SOCKS5
+### Long polling (прямой режим или через CF Worker)
 
 **`app/bot/main.py`:**
 
 ```python
-def create_bot_and_dispatcher() -> tuple[Bot, Dispatcher]:
-    proxy_url = settings.telegram_proxy   # socks5://tor:9050
-    session = AiohttpSession(proxy=proxy_url)
-
-    bot = Bot(
-        token=settings.telegram_bot_token,
-        session=session,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    )
-    ...
+from aiogram.client.telegram import TelegramAPIServer
+...
+if settings.telegram_api_proxy_enabled and settings.telegram_api_proxy_url:
+    api = TelegramAPIServer.from_base(settings.telegram_api_proxy_url)
+    session = AiohttpSession(api=api)
+else:
+    session = AiohttpSession()
 ```
 
-**`aiohttp-socks`** обеспечивает **SOCKS5-подключение** через Tor.
 
 ### Middlewares
 
