@@ -41,13 +41,11 @@ flowchart TB
         end
 
         Postgres[(flibusta_postgres<br/>PostgreSQL 16)]
-        Tor[flibusta_tor<br/>Alpine + lyrebird]
 
         Data[/data ro<br/>ZIP-архивы + .inpx/]
         Tmp[/app/tmp_downloads<br/>volume/]
 
         SQLAlchemy --> Postgres
-        Aiogram -.SOCKS5.-> Tor
     end
 
     User --> Browser
@@ -61,7 +59,6 @@ flowchart TB
     style Docker fill:#f0f9ff
     style App fill:#fff
     style Postgres fill:#dbeafe
-    style Tor fill:#fce7f3
 
 ```
 
@@ -75,7 +72,7 @@ flowchart TB
 
 **Внутри:**
 - **FastAPI** — HTTP-сервер на `:8000`
-- **aiogram 3** — Telegram-бот (long polling через SOCKS5)
+- **aiogram 3** — Telegram-бот (long polling напрямую, либо через опциональный Cloudflare Worker)
 - **libtorrent** — скачивание кусков торрента
 - **SQLAlchemy 2 (async)** — работа с PostgreSQL
 
@@ -93,17 +90,6 @@ flowchart TB
 
 **Порты:** `5432` проброшен наружу (для локальной разработки и тестов).
 
-### `flibusta_tor`
-
-**Tor-прокси** для обхода блокировок Telegram API.
-
-**Образ:** Alpine + Tor + **lyrebird** (WebTunnel-транспорт).
-
-**Порты:** `9050` (SOCKS5) — **только внутри Docker-сети**, `9051` (Control).
-
-**Зачем:** Telegram API **заблокирован** в РФ. Tor **маскирует трафик** под HTTPS.
-
----
 
 ## Схема БД
 
@@ -426,6 +412,31 @@ sequenceDiagram
     FS-->>U: ZIP (14.1 МБ)
 ```
 
+### 4. Telegram API — прямой режим и опциональный CF Worker
+
+```mermaid
+flowchart LR
+    Bot["✈️ aiogram<br/>(app)"]
+
+    subgraph Direct["Прямой режим (по умолчанию)"]
+        TG1["api.telegram.org"]
+    end
+
+    subgraph ViaProxy["Через Cloudflare Worker (опционально)"]
+        CF["☁️ Cloudflare Worker<br/>(reverse-proxy)"]
+        TG2["api.telegram.org"]
+        CF --> TG2
+    end
+
+    Bot -->|HTTPS| TG1
+    Bot -.->|HTTPS, если TELEGRAM_API_PROXY_ENABLED=true| CF
+
+    style Bot fill:#fff7ed
+    style CF fill:#fef3c7
+    style TG1 fill:#dbeafe
+    style TG2 fill:#dbeafe
+```
+
 ---
 
 ## Модули приложения
@@ -518,9 +529,14 @@ sequenceDiagram
 
 **При компрометации** — `/revoke` в `@BotFather`.
 
-### Tor
+### Cloudflare Worker (опционально)
 
-**Tor-контейнер** не пробрасывает `9050` наружу — только **внутри Docker-сети**. **Безопасно.**
+**Обратный прокси для Telegram API** — включается только если заданы `TELEGRAM_API_PROXY_ENABLED=true` и `TELEGRAM_API_PROXY_URL`. По умолчанию **выключен**, бот работает напрямую.
+
+**Если включён:** Worker видит токен бота (он идёт в пути `/bot<token>/<method>`) и весь трафик к `api.telegram.org`. **Требования:**
+- Worker должен быть **приватным** (не публиковать URL без необходимости).
+- Не логировать тела запросов/ответов (там могут быть сообщения пользователей).
+- Токен бота **не публиковать** — при компрометации `/revoke` в [@BotFather](https://t.me/BotFather).
 
 ### SQL-инъекции
 

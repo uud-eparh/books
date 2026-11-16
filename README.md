@@ -24,7 +24,8 @@
 - 🛒 **Корзина и batch-загрузка** — до 20 книг → один ZIP
 - 🤖 **Telegram-бот** — поиск, карточки, скачивание, автор/серия
 - 🌐 **Веб-интерфейс** — поиск, скачивание, batch, SSE-прогресс
-- 🐳 **Docker** — запуск одной командой, включая Tor для обхода блокировок
+- 🐳 **Docker** — запуск одной командой, прямое подключение к торрент-сети
+- 🌐 **Опционально:** обратный прокси Cloudflare Worker для Telegram API (если `api.telegram.org` блокируется)
 
 ---
 
@@ -60,6 +61,8 @@ cp .env.example .env.docker
 - `TELEGRAM_ALLOWED_USERS` — твой Telegram ID (от [@userinfobot](https://t.me/userinfobot))
 - `LIBRARY_PATH` (только в `.env.docker`) — путь к папке с ZIP-архивами
 - `INPX_PATH` — путь к `.inpx`-файлу
+
+> **Примечание:** по умолчанию бот работает напрямую с `api.telegram.org`. Если он блокируется провайдером — см. [docs/SETUP.md](docs/SETUP.md), раздел «Опционально: прокси Cloudflare для Telegram API».
 
 ### 3. Запуск
 
@@ -115,7 +118,6 @@ flowchart TB
         subgraph Data["Data Layer"]
             direction LR
             PG[("🐘 postgres<br/>PostgreSQL 16<br/>(БД)")]
-            TOR["🌐 tor<br/>Alpine + lyrebird<br/>(SOCKS5 :9050)"]
         end
 
         APP["📦 app<br/>Ubuntu 24.04 + Python 3.12<br/>FastAPI + aiogram + libtorrent"]
@@ -124,13 +126,11 @@ flowchart TB
     end
 
     PG -.SQL.-> APP
-    TOR -.SOCKS5.-> APP
     APP -.mount.-> DATA
 
     style Docker fill:#f0f9ff,stroke:#0369a1,stroke-width:2px
     style Data fill:#e0f2fe,stroke:#0284c7
     style PG fill:#dbeafe
-    style TOR fill:#fce7f3
     style APP fill:#fff7ed
     style DATA fill:#f0fdf4
 ```
@@ -162,7 +162,8 @@ pytest tests/ -v
 - **БД:** PostgreSQL 16 (FTS, GIN, trigram)
 - **Torrent:** libtorrent 2.0.10
 - **Frontend:** Jinja2, минимальный CSS, vanilla JS
-- **Инфраструктура:** Docker Compose, Tor (WebTunnel-мосты)
+- **Инфраструктура:** Docker Compose
+- **Опционально:** Cloudflare Worker для прокси Telegram API
 
 ---
 
@@ -175,5 +176,5 @@ pytest tests/ -v
 ## 🙏 Благодарности
 
 - **Флибуста** — за каталог и раздачу
-- **Tor Project** — за WebTunnel-мосты
 - **aiogram, FastAPI, SQLAlchemy** — за отличные библиотеки
+- **Cloudflare Workers** — за возможность организации обратного прокси для Telegram API (опционально)
